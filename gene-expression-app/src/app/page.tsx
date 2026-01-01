@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import Link from "next/link"
+import BioBackground from "./components/BioBackground"
 
 export default function Home() {
   const [msg, setMsg] = useState("")
@@ -45,23 +46,54 @@ export default function Home() {
       MozOsxFontSmoothing: "grayscale",
       textRendering: "optimizeLegibility"
     }}>
-      <div className="animate-slide-up" style={{ marginBottom: 30 }}>
+      <BioBackground />
+      <div className="animate-slide-up" style={{ marginBottom: 30, position: "relative", zIndex: 1 }}>
         <h1 style={{ 
-          fontSize: 28, 
-          marginBottom: 10,
-          fontWeight: 700,
-          color: "#e0f2fe",
-          letterSpacing: "-0.02em"
+          fontSize: 36, 
+          marginBottom: 15,
+          fontWeight: 800,
+          background: "linear-gradient(135deg, #00f0ff 0%, #8b5cf6 50%, #ec4899 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          backgroundClip: "text",
+          letterSpacing: "-0.02em",
+          textAlign: "center",
+          position: "relative"
         }}>
-          Gene Expression Analyzer
+          <span style={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "200px",
+            height: "2px",
+            background: "linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.5), transparent)",
+            top: "-10px",
+            animation: "pulse-border 3s ease-in-out infinite"
+          }}></span>
+          GENE EXPRESSION ANALYZER
+          <span style={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "200px",
+            height: "2px",
+            background: "linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent)",
+            bottom: "-10px",
+            animation: "pulse-border 3s ease-in-out infinite",
+            animationDelay: "1.5s"
+          }}></span>
         </h1>
         <p className="floating" style={{ 
-          color: "#94a3b8", 
+          color: "#60a5fa", 
           marginBottom: 20,
-          fontSize: 16,
-          lineHeight: 1.5
+          fontSize: 18,
+          lineHeight: 1.5,
+          textAlign: "center",
+          fontWeight: 500,
+          textTransform: "uppercase",
+          letterSpacing: "2px"
         }}>
-          App is live on Vercel 🚀
+          ⚡ Molecular Data Processing System ⚡
         </p>
         <Link 
           href="/history" 
@@ -88,11 +120,19 @@ export default function Home() {
       </div>
 
       <div className="scifi-card animate-slide-up" style={{ 
-        borderRadius: 8, 
-        padding: 24,
+        borderRadius: 12, 
+        padding: 32,
         marginBottom: 20,
         animationDelay: "0.2s",
-        animationFillMode: "backwards"
+        animationFillMode: "backwards",
+        position: "relative",
+        zIndex: 1,
+        border: "2px solid rgba(0, 240, 255, 0.4)",
+        boxShadow: `
+          0 0 30px rgba(0, 240, 255, 0.2),
+          0 0 60px rgba(139, 92, 246, 0.1),
+          inset 0 0 30px rgba(0, 240, 255, 0.05)
+        `
       }}>
         <h2 style={{ 
           fontSize: 20, 
