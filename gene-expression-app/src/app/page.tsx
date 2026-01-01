@@ -45,7 +45,7 @@ export default function Home() {
       MozOsxFontSmoothing: "grayscale",
       textRendering: "optimizeLegibility"
     }}>
-      <div style={{ marginBottom: 30 }}>
+      <div className="animate-slide-up" style={{ marginBottom: 30 }}>
         <h1 style={{ 
           fontSize: 28, 
           marginBottom: 10,
@@ -55,7 +55,7 @@ export default function Home() {
         }}>
           Gene Expression Analyzer
         </h1>
-        <p style={{ 
+        <p className="floating" style={{ 
           color: "#94a3b8", 
           marginBottom: 20,
           fontSize: 16,
@@ -71,17 +71,28 @@ export default function Home() {
             marginBottom: 30,
             display: "inline-block",
             fontSize: 16,
-            fontWeight: 500
+            fontWeight: 500,
+            transition: "all 0.3s ease"
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateX(5px)";
+            e.currentTarget.style.color = "#93c5fd";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateX(0)";
+            e.currentTarget.style.color = "#60a5fa";
           }}
         >
           Go to History
         </Link>
       </div>
 
-      <div className="scifi-card" style={{ 
+      <div className="scifi-card animate-slide-up" style={{ 
         borderRadius: 8, 
         padding: 24,
-        marginBottom: 20
+        marginBottom: 20,
+        animationDelay: "0.2s",
+        animationFillMode: "backwards"
       }}>
         <h2 style={{ 
           fontSize: 20, 
@@ -148,7 +159,7 @@ export default function Home() {
         )}
 
         {res && (
-          <div className="scifi-card" style={{
+          <div className="scifi-card animate-fade-in" style={{
             marginTop: 20,
             padding: 20,
             borderRadius: 4
@@ -158,30 +169,67 @@ export default function Home() {
               marginBottom: 16,
               fontWeight: 600,
               color: "#e0f2fe",
-              letterSpacing: "-0.01em"
+              letterSpacing: "-0.01em",
+              display: "flex",
+              alignItems: "center",
+              gap: 10
             }}>
+              <span style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                backgroundColor: "#00f0ff",
+                boxShadow: "0 0 10px rgba(0, 240, 255, 0.8)",
+                animation: "pulse-glow 2s ease-in-out infinite"
+              }}></span>
               Analysis Results
             </h3>
             <div style={{ display: "grid", gap: 14 }}>
-              <div style={{ fontSize: 15, color: "#cbd5e1", lineHeight: 1.6 }}>
+              <div className="animate-slide-left" style={{ 
+                fontSize: 15, 
+                color: "#cbd5e1", 
+                lineHeight: 1.6,
+                animationDelay: "0.1s",
+                animationFillMode: "backwards"
+              }}>
                 <strong style={{ fontWeight: 600, color: "#e0f2fe" }}>File:</strong> {res.fileName || "Unknown"}
               </div>
-              <div style={{ fontSize: 15, color: "#cbd5e1", lineHeight: 1.6 }}>
+              <div className="animate-slide-left" style={{ 
+                fontSize: 15, 
+                color: "#cbd5e1", 
+                lineHeight: 1.6,
+                animationDelay: "0.2s",
+                animationFillMode: "backwards"
+              }}>
                 <strong style={{ fontWeight: 600, color: "#e0f2fe" }}>Genes:</strong> {res.genes.toLocaleString()}
               </div>
-              <div style={{ fontSize: 15, color: "#cbd5e1", lineHeight: 1.6 }}>
+              <div className="animate-slide-left" style={{ 
+                fontSize: 15, 
+                color: "#cbd5e1", 
+                lineHeight: 1.6,
+                animationDelay: "0.3s",
+                animationFillMode: "backwards"
+              }}>
                 <strong style={{ fontWeight: 600, color: "#e0f2fe" }}>Samples:</strong> {res.samples.toLocaleString()}
               </div>
-              <div style={{ fontSize: 15, color: "#cbd5e1", lineHeight: 1.6 }}>
+              <div className="animate-slide-left" style={{ 
+                fontSize: 15, 
+                color: "#cbd5e1", 
+                lineHeight: 1.6,
+                animationDelay: "0.4s",
+                animationFillMode: "backwards"
+              }}>
                 <strong style={{ fontWeight: 600, color: "#e0f2fe" }}>Mean Expression:</strong> {res.meanExpr?.toFixed(2) || "N/A"}
               </div>
-              <div style={{ 
+              <div className="animate-slide-left" style={{ 
                 fontSize: 13, 
                 color: "#94a3b8", 
                 marginTop: 12,
                 paddingTop: 12,
                 borderTop: "1px solid rgba(0, 240, 255, 0.2)",
-                lineHeight: 1.5
+                lineHeight: 1.5,
+                animationDelay: "0.5s",
+                animationFillMode: "backwards"
               }}>
                 <strong style={{ fontWeight: 600 }}>Date:</strong> {new Date(res.createdAt).toLocaleString()}
               </div>
