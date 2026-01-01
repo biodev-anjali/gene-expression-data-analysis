@@ -32,7 +32,7 @@ export default function History() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <Link 
             href="/" 
-            className="text-2xl font-bold glow-text hover:text-cyan-400 transition-colors"
+            className="text-2xl font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
           >
             GENEX
           </Link>
@@ -48,7 +48,7 @@ export default function History() {
       <main className="max-w-7xl mx-auto px-6 py-12 space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-5xl font-bold glow-text">
+          <h1 className="text-5xl font-bold text-cyan-400">
             ANALYSIS HISTORY
           </h1>
           <p className="text-cyan-300/80 font-mono text-lg">
