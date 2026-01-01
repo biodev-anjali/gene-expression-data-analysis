@@ -1,36 +1,130 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gene Expression Analyzer
+
+A sci-fi themed Next.js application for analyzing gene expression data with a modern, futuristic UI.
+
+## Features
+
+- 🧬 Gene expression file analysis
+- 📊 Statistical analysis display
+- 📜 Analysis history tracking
+- 🔄 Duplicate detection via file hashing
+- 🎨 Sci-fi themed dynamic UI with animations
+- 💾 Persistent data storage with Prisma
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Database**: PostgreSQL (Production) / SQLite (Development)
+- **ORM**: Prisma
+- **Deployment**: Vercel
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 20.19+ or 22.12+ (for latest Prisma) or Node.js 20.11+ (with Prisma 5.x)
+- npm or yarn
+- PostgreSQL database (for production) or SQLite (for local dev)
+
+### Installation
+
+1. Clone the repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <your-repo-url>
+cd gene-expression-app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env` file in the root directory:
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/genex_dev?schema=public"
+```
 
-## Learn More
+For local development with SQLite (temporary, will need PostgreSQL for production):
+```env
+DATABASE_URL="file:./dev.db"
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. Set up the database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+For PostgreSQL:
+```bash
+npx prisma migrate dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+For SQLite (if using):
+```bash
+# Update schema.prisma to use sqlite first
+npx prisma migrate dev
+```
 
-## Deploy on Vercel
+5. Generate Prisma Client
+```bash
+npx prisma generate
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+6. Run the development server
+```bash
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Project Structure
+
+```
+gene-expression-app/
+├── prisma/
+│   ├── schema.prisma       # Database schema
+│   └── migrations/         # Database migrations
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── analyze/    # File upload API
+│   │   │   └── history/    # History API
+│   │   ├── history/        # History page
+│   │   ├── page.tsx        # Main analyzer page
+│   │   └── layout.tsx      # Root layout
+│   └── lib/
+│       └── prisma.ts       # Prisma client
+└── public/                 # Static assets
+```
+
+## Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+
+### Quick Deploy to Vercel
+
+1. Push your code to GitHub
+2. Import project on [Vercel](https://vercel.com/new)
+3. Add `DATABASE_URL` environment variable (PostgreSQL connection string)
+4. Deploy!
+
+**Important**: This app requires PostgreSQL for production deployment. SQLite will not work on serverless platforms like Vercel.
+
+## Usage
+
+1. **Upload File**: Navigate to the main page and upload a gene expression data file
+2. **View Results**: Analysis results are displayed immediately after upload
+3. **View History**: Click "HISTORY" to see all past analyses
+4. **Compare**: Select multiple analyses in history to compare them side-by-side
+
+## Development
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## License
+
+MIT
