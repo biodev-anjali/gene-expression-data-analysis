@@ -34,10 +34,33 @@ export default function Home() {
   }
 
   return (
-    <main style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
+    <main style={{ 
+      padding: 20, 
+      maxWidth: 800, 
+      margin: "0 auto",
+      backgroundColor: "#ffffff",
+      minHeight: "100vh",
+      color: "#333333",
+      WebkitFontSmoothing: "antialiased",
+      MozOsxFontSmoothing: "grayscale",
+      textRendering: "optimizeLegibility"
+    }}>
       <div style={{ marginBottom: 30 }}>
-        <h1 style={{ fontSize: 28, marginBottom: 10 }}>Gene Expression Analyzer</h1>
-        <p style={{ color: "#666", marginBottom: 20 }}>
+        <h1 style={{ 
+          fontSize: 28, 
+          marginBottom: 10,
+          fontWeight: 700,
+          color: "#1a1a1a",
+          letterSpacing: "-0.02em"
+        }}>
+          Gene Expression Analyzer
+        </h1>
+        <p style={{ 
+          color: "#555555", 
+          marginBottom: 20,
+          fontSize: 16,
+          lineHeight: 1.5
+        }}>
           App is live on Vercel 🚀
         </p>
         <Link 
@@ -46,7 +69,9 @@ export default function Home() {
             color: "#0066cc", 
             textDecoration: "underline",
             marginBottom: 30,
-            display: "inline-block"
+            display: "inline-block",
+            fontSize: 16,
+            fontWeight: 500
           }}
         >
           Go to History
@@ -54,12 +79,21 @@ export default function Home() {
       </div>
 
       <div style={{ 
-        border: "1px solid #ddd", 
+        border: "1px solid #e0e0e0", 
         borderRadius: 8, 
         padding: 24,
-        backgroundColor: "#f9f9f9"
+        backgroundColor: "#ffffff",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
       }}>
-        <h2 style={{ fontSize: 20, marginBottom: 16 }}>Upload File</h2>
+        <h2 style={{ 
+          fontSize: 20, 
+          marginBottom: 16,
+          fontWeight: 600,
+          color: "#1a1a1a",
+          letterSpacing: "-0.01em"
+        }}>
+          Upload File
+        </h2>
         
         <form onSubmit={submit} style={{ marginBottom: 20 }}>
           <div style={{ marginBottom: 16 }}>
@@ -68,10 +102,13 @@ export default function Home() {
               name="file" 
               required 
               style={{
-                padding: 8,
+                padding: 10,
                 width: "100%",
-                border: "1px solid #ccc",
-                borderRadius: 4
+                border: "1px solid #cccccc",
+                borderRadius: 4,
+                fontSize: 14,
+                color: "#333333",
+                backgroundColor: "#ffffff"
               }}
             />
           </div>
@@ -80,13 +117,15 @@ export default function Home() {
             type="submit" 
             disabled={loading}
             style={{
-              padding: "10px 20px",
-              backgroundColor: loading ? "#ccc" : "#0066cc",
-              color: "white",
+              padding: "12px 24px",
+              backgroundColor: loading ? "#cccccc" : "#0066cc",
+              color: "#ffffff",
               border: "none",
               borderRadius: 4,
               cursor: loading ? "not-allowed" : "pointer",
-              fontSize: 16
+              fontSize: 16,
+              fontWeight: 600,
+              letterSpacing: "0.01em"
             }}
           >
             {loading ? "Processing..." : "Analyze File"}
@@ -95,7 +134,7 @@ export default function Home() {
 
         {msg && (
           <div style={{
-            padding: 12,
+            padding: 14,
             marginBottom: 16,
             borderRadius: 4,
             backgroundColor: msg.includes("✅") ? "#d4edda" : 
@@ -103,7 +142,10 @@ export default function Home() {
             color: msg.includes("✅") ? "#155724" : 
                    msg.includes("⚠️") ? "#856404" : "#721c24",
             border: `1px solid ${msg.includes("✅") ? "#c3e6cb" : 
-                              msg.includes("⚠️") ? "#ffeaa7" : "#f5c6cb"}`
+                              msg.includes("⚠️") ? "#ffeaa7" : "#f5c6cb"}`,
+            fontSize: 14,
+            lineHeight: 1.5,
+            fontWeight: 500
           }}>
             {msg}
           </div>
@@ -112,27 +154,42 @@ export default function Home() {
         {res && (
           <div style={{
             marginTop: 20,
-            padding: 16,
-            backgroundColor: "white",
-            border: "1px solid #ddd",
+            padding: 20,
+            backgroundColor: "#f8f9fa",
+            border: "1px solid #e0e0e0",
             borderRadius: 4
           }}>
-            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Analysis Results</h3>
-            <div style={{ display: "grid", gap: 12 }}>
-              <div>
-                <strong>File:</strong> {res.fileName || "Unknown"}
+            <h3 style={{ 
+              fontSize: 18, 
+              marginBottom: 16,
+              fontWeight: 600,
+              color: "#1a1a1a",
+              letterSpacing: "-0.01em"
+            }}>
+              Analysis Results
+            </h3>
+            <div style={{ display: "grid", gap: 14 }}>
+              <div style={{ fontSize: 15, color: "#333333", lineHeight: 1.6 }}>
+                <strong style={{ fontWeight: 600, color: "#1a1a1a" }}>File:</strong> {res.fileName || "Unknown"}
               </div>
-              <div>
-                <strong>Genes:</strong> {res.genes.toLocaleString()}
+              <div style={{ fontSize: 15, color: "#333333", lineHeight: 1.6 }}>
+                <strong style={{ fontWeight: 600, color: "#1a1a1a" }}>Genes:</strong> {res.genes.toLocaleString()}
               </div>
-              <div>
-                <strong>Samples:</strong> {res.samples.toLocaleString()}
+              <div style={{ fontSize: 15, color: "#333333", lineHeight: 1.6 }}>
+                <strong style={{ fontWeight: 600, color: "#1a1a1a" }}>Samples:</strong> {res.samples.toLocaleString()}
               </div>
-              <div>
-                <strong>Mean Expression:</strong> {res.meanExpr?.toFixed(2) || "N/A"}
+              <div style={{ fontSize: 15, color: "#333333", lineHeight: 1.6 }}>
+                <strong style={{ fontWeight: 600, color: "#1a1a1a" }}>Mean Expression:</strong> {res.meanExpr?.toFixed(2) || "N/A"}
               </div>
-              <div style={{ fontSize: 12, color: "#666", marginTop: 8 }}>
-                <strong>Date:</strong> {new Date(res.createdAt).toLocaleString()}
+              <div style={{ 
+                fontSize: 13, 
+                color: "#666666", 
+                marginTop: 12,
+                paddingTop: 12,
+                borderTop: "1px solid #e0e0e0",
+                lineHeight: 1.5
+              }}>
+                <strong style={{ fontWeight: 600 }}>Date:</strong> {new Date(res.createdAt).toLocaleString()}
               </div>
             </div>
           </div>
