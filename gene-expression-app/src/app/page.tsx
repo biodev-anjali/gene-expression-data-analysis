@@ -132,15 +132,23 @@ export default function Home() {
               fontSize: 16,
               fontWeight: 600,
               letterSpacing: "0.01em",
-              opacity: loading ? 0.6 : 1
+              opacity: loading ? 0.6 : 1,
+              position: "relative"
             }}
           >
+            {loading && (
+              <span style={{
+                display: "inline-block",
+                marginRight: 8,
+                animation: "spin 1s linear infinite"
+              }}>⟳</span>
+            )}
             {loading ? "Processing..." : "Analyze File"}
           </button>
         </form>
 
         {msg && (
-          <div style={{
+          <div className="animate-scale-in" style={{
             padding: 14,
             marginBottom: 16,
             borderRadius: 4,
