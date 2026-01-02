@@ -79,10 +79,10 @@ body::after {
     transform: translateY(0) translateX(0);
   }
   33% {
-    transform: translateY(-20px) translateX(10px);
+    transform: translateY(-25px) translateX(15px);
   }
   66% {
-    transform: translateY(10px) translateX(-10px);
+    transform: translateY(15px) translateX(-15px);
   }
 }
 
