@@ -10,184 +10,158 @@ export default function BioBackground() {
       height: "100%",
       overflow: "hidden",
       zIndex: 0,
-      pointerEvents: "none"
+      pointerEvents: "none",
+      opacity: 0.6
     }}>
-      {/* Animated DNA Strands */}
-      <div className="dna-strand" style={{
-        position: "absolute",
-        left: "10%",
-        top: "-100px",
-        width: "4px",
-        height: "400px",
-        background: "linear-gradient(to bottom, transparent, rgba(0, 240, 255, 0.3), transparent)",
-        animation: "float-dna 8s ease-in-out infinite",
-        animationDelay: "0s"
-      }}>
-        <div style={{
-          position: "absolute",
-          left: "-2px",
-          width: "8px",
-          height: "8px",
-          borderRadius: "50%",
-          background: "rgba(0, 240, 255, 0.6)",
-          boxShadow: "0 0 10px rgba(0, 240, 255, 0.8)",
-          animation: "move-dna 3s ease-in-out infinite"
-        }}></div>
-        <div style={{
-          position: "absolute",
-          right: "-2px",
-          width: "8px",
-          height: "8px",
-          borderRadius: "50%",
-          background: "rgba(139, 92, 246, 0.6)",
-          boxShadow: "0 0 10px rgba(139, 92, 246, 0.8)",
-          top: "50px",
-          animation: "move-dna 3s ease-in-out infinite",
-          animationDelay: "0.5s"
-        }}></div>
-      </div>
-
-      <div className="dna-strand" style={{
-        position: "absolute",
-        left: "30%",
-        top: "-150px",
-        width: "4px",
-        height: "400px",
-        background: "linear-gradient(to bottom, transparent, rgba(139, 92, 246, 0.3), transparent)",
-        animation: "float-dna 10s ease-in-out infinite",
-        animationDelay: "2s"
-      }}>
-        <div style={{
-          position: "absolute",
-          left: "-2px",
-          width: "8px",
-          height: "8px",
-          borderRadius: "50%",
-          background: "rgba(236, 72, 153, 0.6)",
-          boxShadow: "0 0 10px rgba(236, 72, 153, 0.8)",
-          animation: "move-dna 4s ease-in-out infinite"
-        }}></div>
-        <div style={{
-          position: "absolute",
-          right: "-2px",
-          width: "8px",
-          height: "8px",
-          borderRadius: "50%",
-          background: "rgba(0, 240, 255, 0.6)",
-          boxShadow: "0 0 10px rgba(0, 240, 255, 0.8)",
-          top: "80px",
-          animation: "move-dna 4s ease-in-out infinite",
-          animationDelay: "0.8s"
-        }}></div>
-      </div>
-
-      <div className="dna-strand" style={{
-        position: "absolute",
-        right: "15%",
-        top: "-100px",
-        width: "4px",
-        height: "400px",
-        background: "linear-gradient(to bottom, transparent, rgba(236, 72, 153, 0.3), transparent)",
-        animation: "float-dna 9s ease-in-out infinite",
-        animationDelay: "4s"
-      }}>
-        <div style={{
-          position: "absolute",
-          left: "-2px",
-          width: "8px",
-          height: "8px",
-          borderRadius: "50%",
-          background: "rgba(139, 92, 246, 0.6)",
-          boxShadow: "0 0 10px rgba(139, 92, 246, 0.8)",
-          animation: "move-dna 3.5s ease-in-out infinite"
-        }}></div>
-        <div style={{
-          position: "absolute",
-          right: "-2px",
-          width: "8px",
-          height: "8px",
-          borderRadius: "50%",
-          background: "rgba(0, 240, 255, 0.6)",
-          boxShadow: "0 0 10px rgba(0, 240, 255, 0.8)",
-          top: "60px",
-          animation: "move-dna 3.5s ease-in-out infinite",
-          animationDelay: "0.6s"
-        }}></div>
-      </div>
-
-      {/* Molecular Structures */}
-      {[...Array(6)].map((_, i) => (
+      {/* DNA Double Helix Strands */}
+      {[0, 1, 2].map((i) => (
         <div
-          key={i}
-          className="molecule"
+          key={`dna-${i}`}
           style={{
             position: "absolute",
-            width: "60px",
-            height: "60px",
-            left: `${15 + i * 15}%`,
-            top: `${20 + (i % 3) * 30}%`,
-            animation: `float-molecule ${8 + i}s ease-in-out infinite`,
-            animationDelay: `${i * 0.5}s`,
-            opacity: 0.2
+            left: `${15 + i * 30}%`,
+            top: "-100px",
+            width: "3px",
+            height: "500px",
+            background: `linear-gradient(to bottom, 
+              transparent,
+              rgba(${i === 0 ? '0, 240, 255' : i === 1 ? '139, 92, 246' : '20, 184, 166'}, 0.2),
+              transparent)`,
+            animation: `float-slow ${12 + i * 2}s ease-in-out infinite`,
+            animationDelay: `${i * 2}s`
           }}
         >
-          <div style={{
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-            border: "2px solid rgba(0, 240, 255, 0.4)",
-            borderRadius: "50%",
-            animation: `rotate-slow ${15 + i * 2}s linear infinite`
-          }}></div>
-          <div style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "8px",
-            height: "8px",
-            borderRadius: "50%",
-            background: "rgba(0, 240, 255, 0.6)",
-            boxShadow: "0 0 15px rgba(0, 240, 255, 0.8)"
-          }}></div>
-          {[0, 60, 120, 180, 240, 300].map((angle, j) => (
+          {/* Left strand nodes */}
+          {[...Array(8)].map((_, j) => (
             <div
-              key={j}
+              key={`node-l-${j}`}
               style={{
                 position: "absolute",
-                top: "50%",
-                left: "50%",
-                width: "6px",
-                height: "6px",
+                left: "-4px",
+                top: `${50 + j * 60}px`,
+                width: "10px",
+                height: "10px",
                 borderRadius: "50%",
-                background: "rgba(139, 92, 246, 0.5)",
-                transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-25px)`,
-                boxShadow: "0 0 8px rgba(139, 92, 246, 0.6)"
+                background: `rgba(${i === 0 ? '0, 240, 255' : i === 1 ? '139, 92, 246' : '20, 184, 166'}, 0.4)`,
+                boxShadow: `0 0 8px rgba(${i === 0 ? '0, 240, 255' : i === 1 ? '139, 92, 246' : '20, 184, 166'}, 0.6)`,
+                animation: `pulse-subtle ${3 + j * 0.3}s ease-in-out infinite`
               }}
-            ></div>
+            />
+          ))}
+          {/* Right strand nodes */}
+          {[...Array(8)].map((_, j) => (
+            <div
+              key={`node-r-${j}`}
+              style={{
+                position: "absolute",
+                right: "-4px",
+                top: `${80 + j * 60}px`,
+                width: "10px",
+                height: "10px",
+                borderRadius: "50%",
+                background: `rgba(${i === 0 ? '20, 184, 166' : i === 1 ? '0, 240, 255' : '139, 92, 246'}, 0.4)`,
+                boxShadow: `0 0 8px rgba(${i === 0 ? '20, 184, 166' : i === 1 ? '0, 240, 255' : '139, 92, 246'}, 0.6)`,
+                animation: `pulse-subtle ${3.5 + j * 0.3}s ease-in-out infinite`,
+                animationDelay: "0.5s"
+              }}
+            />
           ))}
         </div>
       ))}
 
-      {/* Floating Particles */}
+      {/* Floating Gene Nodes */}
+      {[...Array(12)].map((_, i) => (
+        <div
+          key={`gene-${i}`}
+          style={{
+            position: "absolute",
+            left: `${(i * 8) % 100}%`,
+            top: `${20 + (i % 4) * 25}%`,
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
+            background: `rgba(${i % 3 === 0 ? '0, 240, 255' : i % 3 === 1 ? '20, 184, 166' : '139, 92, 246'}, 0.3)`,
+            boxShadow: `0 0 10px rgba(${i % 3 === 0 ? '0, 240, 255' : i % 3 === 1 ? '20, 184, 166' : '139, 92, 246'}, 0.5)`,
+            animation: `drift ${15 + i * 2}s ease-in-out infinite`,
+            animationDelay: `${i * 0.5}s`
+          }}
+        />
+      ))}
+
+      {/* Molecular Particles */}
       {[...Array(20)].map((_, i) => (
         <div
           key={`particle-${i}`}
           style={{
             position: "absolute",
-            width: "3px",
-            height: "3px",
+            left: `${(i * 5.5) % 100}%`,
+            top: `${(i * 7) % 100}%`,
+            width: "4px",
+            height: "4px",
             borderRadius: "50%",
-            background: `rgba(${i % 3 === 0 ? '0, 240, 255' : i % 3 === 1 ? '139, 92, 246' : '236, 72, 153'}, 0.6)`,
-            left: `${(i * 7) % 100}%`,
-            top: `${(i * 13) % 100}%`,
-            animation: `float-particle ${10 + (i % 5)}s ease-in-out infinite`,
-            animationDelay: `${i * 0.2}s`,
-            boxShadow: `0 0 6px rgba(${i % 3 === 0 ? '0, 240, 255' : i % 3 === 1 ? '139, 92, 246' : '236, 72, 153'}, 0.8)`
+            background: `rgba(${i % 3 === 0 ? '0, 240, 255' : i % 3 === 1 ? '20, 184, 166' : '139, 92, 246'}, 0.4)`,
+            boxShadow: `0 0 6px rgba(${i % 3 === 0 ? '0, 240, 255' : i % 3 === 1 ? '20, 184, 166' : '139, 92, 246'}, 0.6)`,
+            animation: `float-slow ${20 + i * 1.5}s ease-in-out infinite`,
+            animationDelay: `${i * 0.3}s`
           }}
-        ></div>
+        />
+      ))}
+
+      {/* Molecular Structures */}
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={`molecule-${i}`}
+          style={{
+            position: "absolute",
+            left: `${25 + i * 20}%`,
+            top: `${30 + (i % 2) * 40}%`,
+            width: "40px",
+            height: "40px",
+            animation: `rotate-slow ${30 + i * 5}s linear infinite`,
+            animationDelay: `${i * 2}s`,
+            opacity: 0.2
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              width: "100%",
+              height: "100%",
+              border: "2px solid rgba(0, 240, 255, 0.3)",
+              borderRadius: "50%"
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              background: "rgba(0, 240, 255, 0.5)",
+              boxShadow: "0 0 10px rgba(0, 240, 255, 0.8)"
+            }}
+          />
+          {[0, 60, 120, 180, 240, 300].map((angle) => (
+            <div
+              key={angle}
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                width: "4px",
+                height: "4px",
+                borderRadius: "50%",
+                background: "rgba(139, 92, 246, 0.4)",
+                transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-18px)`,
+                boxShadow: "0 0 6px rgba(139, 92, 246, 0.6)"
+              }}
+            />
+          ))}
+        </div>
       ))}
     </div>
   )
 }
-
