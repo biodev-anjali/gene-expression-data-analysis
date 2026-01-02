@@ -93,10 +93,6 @@ export default function Home() {
               lineHeight: "1.8"
             }}>
               Developed by <span style={{ color: "#00f0ff" }}>Anjali Yadav</span>
-              <br />
-              <span style={{ fontSize: "13px", fontWeight: 400 }}>
-                M.Sc. Zoology | Bioinformatics
-              </span>
             </p>
           </div>
         </div>
