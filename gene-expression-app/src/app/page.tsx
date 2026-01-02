@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 export default function Home() {
   return (
     <main className="p-10 space-y-4">
@@ -15,10 +17,10 @@ export default function Home() {
       </p>
 
       <nav className="flex gap-4 pt-4 underline">
-        <a href="/analyze">Analyzer</a>
-        <a href="/charts">Charts</a>
-        <a href="/csv-parser">CSV Parser</a>
-        <a href="/history">History</a>
+        <Link href="/analyze">Analyzer</Link>
+        <Link href="/charts">Charts</Link>
+        <Link href="/csv-parser">CSV Parser</Link>
+        <Link href="/history">History</Link>
       </nav>
     </main>
   )

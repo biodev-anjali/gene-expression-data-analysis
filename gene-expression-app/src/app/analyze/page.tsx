@@ -4,14 +4,23 @@ import { useState } from "react"
 export default function Analyze() {
   const [msg, setMsg] = useState("")
   const [res, setRes] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
 
-  async function submit(e: any) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const formData = new FormData(e.target)
-    const r = await fetch("/api/analyze", { method: "POST", body: formData })
-    const d = await r.json()
-    setMsg(d.alreadyAnalyzed ? "Already analyzed sample" : "Analysis completed")
-    setRes(d.data)
+    setLoading(true)
+    const formData = new FormData(e.target as HTMLFormElement)
+    
+    try {
+      const r = await fetch("/api/analyze", { method: "POST", body: formData })
+      const d = await r.json()
+      setMsg(d.alreadyAnalyzed ? "Already analyzed sample" : "Analysis completed")
+      setRes(d.data)
+    } catch (error) {
+      setMsg("Error analyzing file")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -20,8 +29,11 @@ export default function Analyze() {
 
       <form onSubmit={submit}>
         <input type="file" name="file" required />
-        <button className="ml-2 px-3 py-1 bg-black text-white">
-          Analyze
+        <button 
+          className="ml-2 px-3 py-1 bg-black text-white"
+          disabled={loading}
+        >
+          {loading ? "Processing..." : "Analyze"}
         </button>
       </form>
 
