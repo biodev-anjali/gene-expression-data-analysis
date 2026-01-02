@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import ExpressionChart from "@/components/ExpressionChart"
 
 export default function History() {
   const [runs, setRuns] = useState<any[]>([])
@@ -151,7 +152,7 @@ export default function History() {
           </div>
         )}
 
-        {/* Comparison View */}
+        {/* Comparison View with Chart */}
         {compare.length > 0 && (
           <div className="space-y-6 mt-12">
             <div className="flex items-center justify-between border-t border-cyan-500/30 pt-8">
@@ -164,6 +165,16 @@ export default function History() {
               >
                 [ CLEAR SELECTION ]
               </button>
+            </div>
+
+            <div className="scifi-card rounded-lg p-6">
+              <h3 className="text-xl font-bold text-cyan-400 font-mono mb-4">
+                Mean Expression Comparison
+              </h3>
+              <ExpressionChart data={compare.map(r => ({
+                fileName: r.fileName || "Unknown",
+                meanExpr: r.meanExpr || 0
+              }))} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

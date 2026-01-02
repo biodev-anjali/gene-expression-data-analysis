@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import crypto from "crypto"
+import Papa from "papaparse"
 
 export async function POST(req: Request) {
   const formData = await req.formData()
@@ -18,15 +19,30 @@ export async function POST(req: Request) {
   })
 
   if (existing) {
-    return NextResponse.json({
-      alreadyAnalyzed: true,
-      data: existing,
-    })
+    return NextResponse.json({ alreadyAnalyzed: true, data: existing })
   }
 
-  const genes = 150
-  const samples = 12
-  const meanExpr = 6.21
+  const csvText = buffer.toString("utf-8")
+  const parsed = Papa.parse(csvText, { header: true })
+  const rows = parsed.data as any[]
+
+  const genes = rows.length
+  const samples = Object.keys(rows[0] || {}).length - 1
+
+  let sum = 0
+  let count = 0
+
+  rows.forEach(row => {
+    Object.values(row).slice(1).forEach((v: any) => {
+      const n = Number(v)
+      if (!isNaN(n)) {
+        sum += n
+        count++
+      }
+    })
+  })
+
+  const meanExpr = Number((sum / count).toFixed(3))
 
   const saved = await prisma.geneExpressionRun.create({
     data: {
@@ -38,9 +54,5 @@ export async function POST(req: Request) {
     },
   })
 
-  return NextResponse.json({
-    alreadyAnalyzed: false,
-    data: saved,
-  })
+  return NextResponse.json({ alreadyAnalyzed: false, data: saved })
 }
-
