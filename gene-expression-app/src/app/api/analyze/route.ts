@@ -23,26 +23,37 @@ export async function POST(req: Request) {
   }
 
   const csvText = buffer.toString("utf-8")
-  const parsed = Papa.parse(csvText, { header: true })
+  const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true })
   const rows = parsed.data as any[]
 
-  const genes = rows.length
-  const samples = Object.keys(rows[0] || {}).length - 1
+  // Filter out empty rows
+  const validRows = rows.filter(row => row && Object.keys(row).length > 0)
+  
+  if (validRows.length === 0) {
+    return NextResponse.json({ error: "CSV file is empty or invalid" }, { status: 400 })
+  }
+
+  const genes = validRows.length
+  const firstRow = validRows[0]
+  const samples = Object.keys(firstRow).filter(key => key && key.trim() !== '').length - 1
 
   let sum = 0
   let count = 0
 
-  rows.forEach(row => {
-    Object.values(row).slice(1).forEach((v: any) => {
+  validRows.forEach(row => {
+    if (!row) return
+    Object.values(row).forEach((v: any, idx) => {
+      // Skip first column (gene name)
+      if (idx === 0) return
       const n = Number(v)
-      if (!isNaN(n)) {
+      if (!isNaN(n) && isFinite(n)) {
         sum += n
         count++
       }
     })
   })
 
-  const meanExpr = Number((sum / count).toFixed(3))
+  const meanExpr = count > 0 ? Number((sum / count).toFixed(3)) : 0
 
   const saved = await prisma.geneExpressionRun.create({
     data: {
