@@ -6,7 +6,6 @@ export default function Navbar() {
   const pathname = usePathname()
 
   const navLinks = [
-    { href: "/", label: "Home" },
     { href: "/analyze", label: "Analyzer" },
     { href: "/charts", label: "Charts" },
     { href: "/csv-parser", label: "CSV Parser" },
@@ -23,21 +22,24 @@ export default function Navbar() {
       gap: "12px",
       flexWrap: "wrap"
     }}>
-      {navLinks.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className="nav-link"
-          style={{
-            padding: "10px 18px",
-            fontSize: "14px",
-            opacity: pathname === link.href ? 1 : 0.8,
-            borderBottom: pathname === link.href ? "2px solid #00f0ff" : "2px solid transparent"
-          }}
-        >
-          {link.label}
-        </Link>
-      ))}
+      {navLinks.map((link) => {
+        const isActive = pathname === link.href
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="nav-link"
+            style={{
+              padding: "10px 18px",
+              fontSize: "14px",
+              borderBottom: isActive ? "2px solid #00f0ff" : "2px solid transparent",
+              opacity: isActive ? 1 : 0.8
+            }}
+          >
+            {link.label}
+          </Link>
+        )
+      })}
     </nav>
   )
 }

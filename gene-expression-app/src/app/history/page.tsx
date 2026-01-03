@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import BioBackground from "../components/BioBackground"
+import Link from "next/link"
 
 export default function History() {
   const [runs, setRuns] = useState<any[]>([])
