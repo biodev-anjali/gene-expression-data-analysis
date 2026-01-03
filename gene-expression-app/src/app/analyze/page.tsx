@@ -1,7 +1,6 @@
 "use client"
 import { useState } from "react"
 import BioBackground from "../components/BioBackground"
-import Link from "next/link"
 
 export default function Analyze() {
   const [msg, setMsg] = useState("")
@@ -38,15 +37,6 @@ export default function Analyze() {
       <BioBackground />
       
       <div style={{ position: "relative", zIndex: 1 }}>
-        <Link href="/" style={{
-          display: "inline-block",
-          marginBottom: "30px",
-          color: "#60a5fa",
-          fontSize: "14px"
-        }}>
-          ← Back to Home
-        </Link>
-
         <h1 className="text-glow" style={{
           fontSize: "36px",
           fontWeight: 700,

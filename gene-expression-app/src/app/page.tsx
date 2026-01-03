@@ -1,4 +1,3 @@
-import Link from "next/link"
 import BioBackground from "./components/BioBackground"
 
 export default function Home() {
@@ -13,42 +12,6 @@ export default function Home() {
     }}>
       <BioBackground />
       
-      {/* Navigation - Top Right */}
-      <nav style={{
-        position: "fixed",
-        top: "30px",
-        right: "40px",
-        zIndex: 100,
-        display: "flex",
-        gap: "12px",
-        flexWrap: "wrap"
-      }}>
-        <Link href="/analyze" className="nav-link" style={{
-          padding: "10px 18px",
-          fontSize: "14px"
-        }}>
-          Analyzer
-        </Link>
-        <Link href="/charts" className="nav-link" style={{
-          padding: "10px 18px",
-          fontSize: "14px"
-        }}>
-          Charts
-        </Link>
-        <Link href="/csv-parser" className="nav-link" style={{
-          padding: "10px 18px",
-          fontSize: "14px"
-        }}>
-          CSV Parser
-        </Link>
-        <Link href="/history" className="nav-link" style={{
-          padding: "10px 18px",
-          fontSize: "14px"
-        }}>
-          History
-        </Link>
-      </nav>
-
       <div className="fade-in" style={{ position: "relative", zIndex: 1 }}>
         <h1 className="text-glow" style={{
           fontSize: "48px",
