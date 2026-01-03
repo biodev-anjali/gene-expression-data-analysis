@@ -30,17 +30,18 @@ export default function Analyze() {
       position: "relative",
       zIndex: 10,
       minHeight: "100vh",
-      padding: "40px",
-      maxWidth: "900px",
+      paddingTop: "100px",
+      padding: "100px 40px 40px",
+      maxWidth: "1000px",
       margin: "0 auto"
     }}>
       <BioBackground />
       
       <div style={{ position: "relative", zIndex: 1 }}>
         <h1 className="text-glow" style={{
-          fontSize: "36px",
+          fontSize: "48px",
           fontWeight: 700,
-          marginBottom: "20px",
+          marginBottom: "30px",
           color: "#e0f2fe"
         }}>
           Analyzer
@@ -50,33 +51,78 @@ export default function Analyze() {
           padding: "30px",
           marginBottom: "30px"
         }}>
-          <p className="info-text" style={{ marginBottom: "20px" }}>
-            This page analyzes uploaded gene expression data and computes summary statistics.
+          <p className="info-text" style={{ 
+            marginBottom: "24px",
+            fontSize: "16px",
+            lineHeight: "1.8"
+          }}>
+            Upload your gene expression data file to perform automated analysis and compute 
+            comprehensive summary statistics including gene count, sample count, and mean expression values.
           </p>
 
           <div style={{
-            padding: "20px",
-            backgroundColor: "rgba(0, 240, 255, 0.05)",
-            border: "1px solid rgba(0, 240, 255, 0.2)",
-            borderRadius: "4px",
-            marginBottom: "20px"
+            padding: "24px",
+            backgroundColor: "rgba(139, 92, 246, 0.1)",
+            border: "2px solid rgba(139, 92, 246, 0.3)",
+            borderRadius: "8px",
+            marginBottom: "24px"
           }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "16px"
+            }}>
+              <span style={{
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#c4b5fd"
+              }}>
+                Accepted File Types
+              </span>
+            </div>
             <p style={{
-              fontSize: "14px",
+              fontSize: "15px",
               fontWeight: 600,
-              color: "#00f0ff",
-              marginBottom: "12px"
+              color: "#c4b5fd",
+              marginBottom: "16px"
             }}>
-              Accepted file format: CSV (gene expression matrix)
+              Only CSV (Comma-Separated Values) files are accepted
             </p>
-            <ul className="info-text" style={{
-              fontSize: "13px",
-              paddingLeft: "20px",
-              lineHeight: "1.8"
+            <div style={{
+              padding: "16px",
+              background: "rgba(15, 23, 42, 0.4)",
+              borderRadius: "6px",
+              marginBottom: "16px"
             }}>
-              <li>First column: Gene names</li>
-              <li>Remaining columns: Expression values per sample</li>
-            </ul>
+              <p style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#00f0ff",
+                marginBottom: "12px"
+              }}>
+                Required CSV Structure:
+              </p>
+              <ul className="info-text" style={{
+                fontSize: "14px",
+                paddingLeft: "24px",
+                lineHeight: "2",
+                color: "#cbd5e1"
+              }}>
+                <li><strong style={{ color: "#00f0ff" }}>First column:</strong> Gene names or identifiers</li>
+                <li><strong style={{ color: "#00f0ff" }}>Remaining columns:</strong> Expression values per sample</li>
+                <li><strong style={{ color: "#00f0ff" }}>Header row:</strong> Column names (first = "Gene", others = sample names)</li>
+              </ul>
+            </div>
+            <p style={{
+              fontSize: "13px",
+              color: "#94a3b8",
+              fontStyle: "italic",
+              marginBottom: 0
+            }}>
+              Note: Other file formats (XLSX, TSV, TXT, etc.) are not supported. Please convert 
+              your data to CSV format before uploading.
+            </p>
           </div>
 
           <form onSubmit={submit} style={{ marginTop: "30px" }}>
