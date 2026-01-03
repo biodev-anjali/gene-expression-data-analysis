@@ -90,78 +90,12 @@ export default function Home() {
           fontSize: "18px",
           lineHeight: "1.8",
           color: "#cbd5e1",
-          marginBottom: "40px",
+          marginBottom: "50px",
           maxWidth: "600px"
         }}>
           Building advanced bioinformatics systems with a focus on gene expression analysis, 
           data visualization, and efficient computational workflows for molecular research.
         </p>
-
-        {/* Statistics */}
-        <div style={{
-          display: "flex",
-          gap: "40px",
-          marginBottom: "50px",
-          flexWrap: "wrap"
-        }}>
-          <div>
-            <div style={{
-              fontSize: "32px",
-              fontWeight: 700,
-              background: "linear-gradient(135deg, #8b5cf6 0%, #00f0ff 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              marginBottom: "4px"
-            }}>
-              10+
-            </div>
-            <div style={{
-              fontSize: "14px",
-              color: "#94a3b8"
-            }}>
-              Analyses
-            </div>
-          </div>
-          <div>
-            <div style={{
-              fontSize: "32px",
-              fontWeight: 700,
-              background: "linear-gradient(135deg, #8b5cf6 0%, #00f0ff 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              marginBottom: "4px"
-            }}>
-              5+
-            </div>
-            <div style={{
-              fontSize: "14px",
-              color: "#94a3b8"
-            }}>
-              Visualizations
-            </div>
-          </div>
-          <div>
-            <div style={{
-              fontSize: "32px",
-              fontWeight: 700,
-              background: "linear-gradient(135deg, #8b5cf6 0%, #00f0ff 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              marginBottom: "4px"
-            }}>
-              3+
-            </div>
-            <div style={{
-              fontSize: "14px",
-              color: "#94a3b8"
-            }}>
-              Years
-            </div>
-          </div>
-        </div>
 
         {/* Status Indicator */}
         <div style={{
@@ -217,50 +151,6 @@ export default function Home() {
           flexDirection: "column",
           gap: "16px"
         }}>
-          {/* Frontend */}
-          <div style={{
-            padding: "16px",
-            background: "rgba(15, 23, 42, 0.4)",
-            border: "1px solid rgba(139, 92, 246, 0.2)",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            position: "relative"
-          }}>
-            <span style={{ fontSize: "20px" }}>⚡</span>
-            <span style={{ color: "#cbd5e1", fontSize: "14px", flex: 1 }}>Frontend</span>
-            <div style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              background: "#8b5cf6",
-              boxShadow: "0 0 8px #8b5cf6"
-            }}></div>
-          </div>
-
-          {/* Data Parser */}
-          <div style={{
-            padding: "16px",
-            background: "rgba(15, 23, 42, 0.4)",
-            border: "1px solid rgba(139, 92, 246, 0.2)",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            position: "relative"
-          }}>
-            <span style={{ fontSize: "20px" }}>🔒</span>
-            <span style={{ color: "#cbd5e1", fontSize: "14px", flex: 1 }}>Data Parser</span>
-            <div style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              background: "#8b5cf6",
-              boxShadow: "0 0 8px #8b5cf6"
-            }}></div>
-          </div>
-
           {/* Analysis Engine */}
           <div style={{
             padding: "16px",
