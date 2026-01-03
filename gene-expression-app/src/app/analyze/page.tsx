@@ -165,52 +165,335 @@ export default function Analyze() {
         )}
 
         {res && (
-          <div className="scifi-card fade-in" style={{ padding: "30px" }}>
-            <h2 style={{
-              fontSize: "20px",
-              fontWeight: 600,
-              marginBottom: "20px",
-              color: "#cbd5e1"
-            }}>
-              Analysis Results
-            </h2>
-            <div style={{
-              display: "grid",
-              gap: "15px"
-            }}>
-              <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                paddingBottom: "12px",
-                borderBottom: "1px solid rgba(0, 240, 255, 0.1)"
+          <>
+            <div className="scifi-card fade-in" style={{ padding: "30px", marginBottom: "20px" }}>
+              <h2 style={{
+                fontSize: "24px",
+                fontWeight: 600,
+                marginBottom: "20px",
+                color: "#cbd5e1"
               }}>
-                <span className="info-text">Genes:</span>
-                <span style={{ color: "#00f0ff", fontWeight: 600 }}>
-                  {res.genes.toLocaleString()}
-                </span>
-              </div>
+                Basic Statistics
+              </h2>
               <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                paddingBottom: "12px",
-                borderBottom: "1px solid rgba(0, 240, 255, 0.1)"
+                display: "grid",
+                gap: "15px"
               }}>
-                <span className="info-text">Samples:</span>
-                <span style={{ color: "#00f0ff", fontWeight: 600 }}>
-                  {res.samples.toLocaleString()}
-                </span>
-              </div>
-              <div style={{
-                display: "flex",
-                justifyContent: "space-between"
-              }}>
-                <span className="info-text">Mean Expression:</span>
-                <span style={{ color: "#00f0ff", fontWeight: 600 }}>
-                  {res.meanExpr?.toFixed(3) || "N/A"}
-                </span>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  paddingBottom: "12px",
+                  borderBottom: "1px solid rgba(0, 240, 255, 0.1)"
+                }}>
+                  <span className="info-text">Genes:</span>
+                  <span style={{ color: "#00f0ff", fontWeight: 600 }}>
+                    {res.genes.toLocaleString()}
+                  </span>
+                </div>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  paddingBottom: "12px",
+                  borderBottom: "1px solid rgba(0, 240, 255, 0.1)"
+                }}>
+                  <span className="info-text">Samples:</span>
+                  <span style={{ color: "#00f0ff", fontWeight: 600 }}>
+                    {res.samples.toLocaleString()}
+                  </span>
+                </div>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between"
+                }}>
+                  <span className="info-text">Mean Expression:</span>
+                  <span style={{ color: "#00f0ff", fontWeight: 600 }}>
+                    {res.meanExpr?.toFixed(3) || "N/A"}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+
+            {res.samples >= 2 && res.foldChangeData && (
+              <div className="scifi-card fade-in" style={{ padding: "30px", marginBottom: "20px" }}>
+                <h2 style={{
+                  fontSize: "24px",
+                  fontWeight: 600,
+                  marginBottom: "20px",
+                  color: "#cbd5e1"
+                }}>
+                  Fold Change Analysis
+                </h2>
+                <p className="info-text" style={{ 
+                  marginBottom: "20px",
+                  fontSize: "15px",
+                  lineHeight: "1.8"
+                }}>
+                  Fold change compares expression levels between two conditions (Condition B / Condition A). 
+                  Genes with fold change &gt; 1 are upregulated (higher in Condition B), while genes with 
+                  fold change &lt; 1 are downregulated (lower in Condition B).
+                </p>
+
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gap: "16px",
+                  marginBottom: "24px"
+                }}>
+                  <div style={{
+                    padding: "16px",
+                    background: "rgba(34, 197, 94, 0.1)",
+                    border: "2px solid rgba(34, 197, 94, 0.4)",
+                    borderRadius: "8px"
+                  }}>
+                    <div style={{
+                      fontSize: "14px",
+                      color: "#94a3b8",
+                      marginBottom: "8px"
+                    }}>
+                      Upregulated Genes
+                    </div>
+                    <div style={{
+                      fontSize: "28px",
+                      fontWeight: 700,
+                      color: "#86efac"
+                    }}>
+                      {res.upregulatedGenes?.toLocaleString() || 0}
+                    </div>
+                    <div style={{
+                      fontSize: "12px",
+                      color: "#86efac",
+                      marginTop: "4px"
+                    }}>
+                      Fold Change &gt; 1
+                    </div>
+                  </div>
+
+                  <div style={{
+                    padding: "16px",
+                    background: "rgba(239, 68, 68, 0.1)",
+                    border: "2px solid rgba(239, 68, 68, 0.4)",
+                    borderRadius: "8px"
+                  }}>
+                    <div style={{
+                      fontSize: "14px",
+                      color: "#94a3b8",
+                      marginBottom: "8px"
+                    }}>
+                      Downregulated Genes
+                    </div>
+                    <div style={{
+                      fontSize: "28px",
+                      fontWeight: 700,
+                      color: "#fca5a5"
+                    }}>
+                      {res.downregulatedGenes?.toLocaleString() || 0}
+                    </div>
+                    <div style={{
+                      fontSize: "12px",
+                      color: "#fca5a5",
+                      marginTop: "4px"
+                    }}>
+                      Fold Change &lt; 1
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  padding: "16px",
+                  background: "rgba(0, 240, 255, 0.05)",
+                  border: "1px solid rgba(0, 240, 255, 0.2)",
+                  borderRadius: "8px",
+                  marginBottom: "20px"
+                }}>
+                  <h3 style={{
+                    fontSize: "16px",
+                    fontWeight: 600,
+                    color: "#00f0ff",
+                    marginBottom: "12px"
+                  }}>
+                    Legend
+                  </h3>
+                  <div style={{
+                    display: "flex",
+                    gap: "24px",
+                    flexWrap: "wrap"
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{
+                        width: "20px",
+                        height: "20px",
+                        background: "#86efac",
+                        borderRadius: "4px"
+                      }}></div>
+                      <span style={{ fontSize: "14px", color: "#cbd5e1" }}>
+                        Upregulated (FC &gt; 1)
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{
+                        width: "20px",
+                        height: "20px",
+                        background: "#fca5a5",
+                        borderRadius: "4px"
+                      }}></div>
+                      <span style={{ fontSize: "14px", color: "#cbd5e1" }}>
+                        Downregulated (FC &lt; 1)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {(() => {
+                  try {
+                    const foldChanges = JSON.parse(res.foldChangeData || '[]')
+                    if (foldChanges.length > 0) {
+                      return (
+                        <div>
+                          <h3 style={{
+                            fontSize: "18px",
+                            fontWeight: 600,
+                            color: "#cbd5e1",
+                            marginBottom: "16px"
+                          }}>
+                            Sample Gene Results (First 20 genes)
+                          </h3>
+                          <div style={{
+                            maxHeight: "400px",
+                            overflowY: "auto",
+                            border: "1px solid rgba(0, 240, 255, 0.2)",
+                            borderRadius: "8px"
+                          }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                              <thead>
+                                <tr style={{
+                                  background: "rgba(0, 240, 255, 0.1)",
+                                  borderBottom: "2px solid rgba(0, 240, 255, 0.3)"
+                                }}>
+                                  <th style={{
+                                    padding: "12px",
+                                    textAlign: "left",
+                                    fontSize: "13px",
+                                    fontWeight: 600,
+                                    color: "#00f0ff"
+                                  }}>Gene</th>
+                                  <th style={{
+                                    padding: "12px",
+                                    textAlign: "right",
+                                    fontSize: "13px",
+                                    fontWeight: 600,
+                                    color: "#00f0ff"
+                                  }}>Condition A</th>
+                                  <th style={{
+                                    padding: "12px",
+                                    textAlign: "right",
+                                    fontSize: "13px",
+                                    fontWeight: 600,
+                                    color: "#00f0ff"
+                                  }}>Condition B</th>
+                                  <th style={{
+                                    padding: "12px",
+                                    textAlign: "right",
+                                    fontSize: "13px",
+                                    fontWeight: 600,
+                                    color: "#00f0ff"
+                                  }}>Fold Change</th>
+                                  <th style={{
+                                    padding: "12px",
+                                    textAlign: "center",
+                                    fontSize: "13px",
+                                    fontWeight: 600,
+                                    color: "#00f0ff"
+                                  }}>Classification</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {foldChanges.slice(0, 20).map((fc: any, idx: number) => (
+                                  <tr key={idx} style={{
+                                    borderBottom: "1px solid rgba(0, 240, 255, 0.1)",
+                                    background: fc.classification === 'upregulated' 
+                                      ? "rgba(34, 197, 94, 0.05)"
+                                      : fc.classification === 'downregulated'
+                                      ? "rgba(239, 68, 68, 0.05)"
+                                      : "transparent"
+                                  }}>
+                                    <td style={{
+                                      padding: "10px 12px",
+                                      fontSize: "13px",
+                                      color: "#cbd5e1"
+                                    }}>{fc.gene}</td>
+                                    <td style={{
+                                      padding: "10px 12px",
+                                      fontSize: "13px",
+                                      color: "#cbd5e1",
+                                      textAlign: "right"
+                                    }}>{fc.conditionA.toFixed(2)}</td>
+                                    <td style={{
+                                      padding: "10px 12px",
+                                      fontSize: "13px",
+                                      color: "#cbd5e1",
+                                      textAlign: "right"
+                                    }}>{fc.conditionB.toFixed(2)}</td>
+                                    <td style={{
+                                      padding: "10px 12px",
+                                      fontSize: "13px",
+                                      color: "#00f0ff",
+                                      fontWeight: 600,
+                                      textAlign: "right"
+                                    }}>{fc.foldChange}</td>
+                                    <td style={{
+                                      padding: "10px 12px",
+                                      fontSize: "13px",
+                                      textAlign: "center"
+                                    }}>
+                                      <span style={{
+                                        padding: "4px 8px",
+                                        borderRadius: "4px",
+                                        fontSize: "12px",
+                                        fontWeight: 600,
+                                        background: fc.classification === 'upregulated'
+                                          ? "rgba(34, 197, 94, 0.2)"
+                                          : fc.classification === 'downregulated'
+                                          ? "rgba(239, 68, 68, 0.2)"
+                                          : "rgba(148, 163, 184, 0.2)",
+                                        color: fc.classification === 'upregulated'
+                                          ? "#86efac"
+                                          : fc.classification === 'downregulated'
+                                          ? "#fca5a5"
+                                          : "#94a3b8"
+                                      }}>
+                                        {fc.classification === 'upregulated' ? '↑ Up' : 
+                                         fc.classification === 'downregulated' ? '↓ Down' : 'No Change'}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )
+                    }
+                  } catch (e) {
+                    return null
+                  }
+                })()}
+              </div>
+            )}
+
+            {res.samples < 2 && (
+              <div className="scifi-card fade-in" style={{ 
+                padding: "20px",
+                background: "rgba(148, 163, 184, 0.1)",
+                border: "1px solid rgba(148, 163, 184, 0.3)"
+              }}>
+                <p style={{ color: "#94a3b8", fontSize: "14px" }}>
+                  <strong>Note:</strong> Fold change analysis requires at least 2 samples. 
+                  This dataset has {res.samples} sample(s). Upload a file with multiple samples 
+                  to perform comparative analysis.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </main>

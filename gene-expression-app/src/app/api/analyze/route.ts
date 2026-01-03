@@ -55,6 +55,62 @@ export async function POST(req: Request) {
 
   const meanExpr = count > 0 ? Number((sum / count).toFixed(3)) : 0
 
+  // Calculate fold change analysis if we have at least 2 samples
+  let upregulatedGenes = null
+  let downregulatedGenes = null
+  let foldChangeData = null
+
+  if (samples >= 2) {
+    const geneNames = Object.keys(firstRow).filter(key => key && key.trim() !== '')
+    const conditionAKey = geneNames[1] // First sample column (after gene name)
+    const conditionBKey = geneNames[2] // Second sample column
+
+    if (conditionAKey && conditionBKey) {
+      const foldChanges: Array<{
+        gene: string
+        conditionA: number
+        conditionB: number
+        foldChange: number
+        classification: 'upregulated' | 'downregulated' | 'no_change'
+      }> = []
+
+      let upregulated = 0
+      let downregulated = 0
+
+      validRows.forEach(row => {
+        if (!row) return
+        const geneName = row[geneNames[0]] || 'Unknown'
+        const valA = Number(row[conditionAKey])
+        const valB = Number(row[conditionBKey])
+
+        if (!isNaN(valA) && !isNaN(valB) && isFinite(valA) && isFinite(valB) && valA > 0) {
+          const foldChange = valB / valA
+          let classification: 'upregulated' | 'downregulated' | 'no_change' = 'no_change'
+          
+          if (foldChange > 1) {
+            classification = 'upregulated'
+            upregulated++
+          } else if (foldChange < 1) {
+            classification = 'downregulated'
+            downregulated++
+          }
+
+          foldChanges.push({
+            gene: geneName,
+            conditionA: valA,
+            conditionB: valB,
+            foldChange: Number(foldChange.toFixed(3)),
+            classification
+          })
+        }
+      })
+
+      upregulatedGenes = upregulated
+      downregulatedGenes = downregulated
+      foldChangeData = JSON.stringify(foldChanges.slice(0, 100)) // Store first 100 genes for display
+    }
+  }
+
   const saved = await prisma.geneExpressionRun.create({
     data: {
       fileName: file.name,
@@ -62,6 +118,9 @@ export async function POST(req: Request) {
       genes,
       samples,
       meanExpr,
+      upregulatedGenes,
+      downregulatedGenes,
+      foldChangeData,
     },
   })
 

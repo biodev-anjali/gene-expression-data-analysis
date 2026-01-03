@@ -239,6 +239,53 @@ export default function Charts() {
             }}>
               Comparison Visualization
             </h2>
+
+            <div style={{
+              padding: "20px",
+              background: "rgba(139, 92, 246, 0.1)",
+              border: "1px solid rgba(139, 92, 246, 0.3)",
+              borderRadius: "8px",
+              marginBottom: "24px"
+            }}>
+              <h3 style={{
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#c4b5fd",
+                marginBottom: "12px"
+              }}>
+                What This Chart Shows
+              </h3>
+              <p className="info-text" style={{
+                fontSize: "15px",
+                lineHeight: "1.8",
+                marginBottom: "12px"
+              }}>
+                This bar chart displays the mean expression values across all genes for each 
+                selected dataset. The height of each bar represents the average gene expression 
+                level in that dataset, providing a quick visual comparison of overall expression 
+                levels between different experiments or conditions.
+              </p>
+              <h3 style={{
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#c4b5fd",
+                marginBottom: "12px",
+                marginTop: "20px"
+              }}>
+                Biological Interpretation
+              </h3>
+              <p className="info-text" style={{
+                fontSize: "15px",
+                lineHeight: "1.8"
+              }}>
+                Higher bars indicate datasets with higher average gene expression, which may suggest 
+                more active transcription or higher mRNA abundance in those samples. This comparison 
+                helps identify which experimental conditions or time points show increased or 
+                decreased overall gene activity. However, remember that this is a simple average - 
+                individual genes may show different patterns that require more detailed analysis.
+              </p>
+            </div>
+
             <div style={{
               padding: "20px",
               background: "rgba(0, 240, 255, 0.03)",

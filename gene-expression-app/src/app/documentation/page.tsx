@@ -34,6 +34,332 @@ export default function Documentation() {
             marginBottom: "20px",
             color: "#cbd5e1"
           }}>
+            Data & Methods
+          </h2>
+
+          <div style={{
+            padding: "24px",
+            background: "rgba(0, 240, 255, 0.05)",
+            border: "1px solid rgba(0, 240, 255, 0.2)",
+            borderRadius: "8px",
+            marginBottom: "24px"
+          }}>
+            <h3 style={{
+              fontSize: "20px",
+              fontWeight: 600,
+              color: "#00f0ff",
+              marginBottom: "12px"
+            }}>
+              Data Source
+            </h3>
+            <p className="info-text" style={{
+              fontSize: "15px",
+              lineHeight: "1.8",
+              marginBottom: "12px"
+            }}>
+              This project uses publicly available gene expression data from <strong style={{ color: "#00f0ff" }}>NCBI GEO 
+              (Gene Expression Omnibus)</strong>, a public repository of gene expression datasets, or simulated 
+              datasets created for learning purposes. The data represents mRNA abundance measurements from 
+              RNA sequencing (RNA-seq) or microarray experiments.
+            </p>
+            <p className="info-text" style={{
+              fontSize: "15px",
+              lineHeight: "1.8"
+            }}>
+              When using real data from NCBI GEO, datasets are downloaded and processed into CSV format 
+              for analysis. Simulated datasets follow the same structure and are designed to demonstrate 
+              basic gene expression analysis concepts for educational purposes.
+            </p>
+          </div>
+
+          <div style={{
+            padding: "24px",
+            background: "rgba(139, 92, 246, 0.1)",
+            border: "1px solid rgba(139, 92, 246, 0.3)",
+            borderRadius: "8px",
+            marginBottom: "24px"
+          }}>
+            <h3 style={{
+              fontSize: "20px",
+              fontWeight: 600,
+              color: "#c4b5fd",
+              marginBottom: "12px"
+            }}>
+              What Gene Expression Values Represent
+            </h3>
+            <p className="info-text" style={{
+              fontSize: "15px",
+              lineHeight: "1.8",
+              marginBottom: "12px"
+            }}>
+              Gene expression values represent <strong style={{ color: "#c4b5fd" }}>mRNA abundance</strong> or 
+              <strong style={{ color: "#c4b5fd" }}> gene activity</strong> in a biological sample. These values 
+              indicate how much of a particular gene's messenger RNA (mRNA) is present, which reflects how 
+              actively that gene is being transcribed.
+            </p>
+            <p className="info-text" style={{
+              fontSize: "15px",
+              lineHeight: "1.8",
+              marginBottom: "12px"
+            }}>
+              Biologically, higher expression values mean:
+            </p>
+            <ul style={{
+              paddingLeft: "24px",
+              lineHeight: "2",
+              color: "#cbd5e1",
+              fontSize: "15px",
+              marginBottom: "12px"
+            }}>
+              <li>More mRNA molecules are present for that gene</li>
+              <li>The gene is being transcribed more actively</li>
+              <li>The protein encoded by that gene is likely being produced at higher levels</li>
+            </ul>
+            <p className="info-text" style={{
+              fontSize: "15px",
+              lineHeight: "1.8"
+            }}>
+              Expression values can be measured in different units (read counts, FPKM, TPM, or normalized 
+              intensities) depending on the experimental platform. The analysis workflow normalizes and 
+              processes these values to enable meaningful comparisons between samples.
+            </p>
+          </div>
+
+          <div style={{
+            padding: "24px",
+            background: "rgba(0, 240, 255, 0.05)",
+            border: "1px solid rgba(0, 240, 255, 0.2)",
+            borderRadius: "8px",
+            marginBottom: "24px"
+          }}>
+            <h3 style={{
+              fontSize: "20px",
+              fontWeight: 600,
+              color: "#00f0ff",
+              marginBottom: "12px"
+            }}>
+              Analysis Workflow
+            </h3>
+            <p className="info-text" style={{
+              fontSize: "15px",
+              lineHeight: "1.8",
+              marginBottom: "16px"
+            }}>
+              The analysis follows a simple, entry-level workflow designed for learning and basic 
+              interpretation:
+            </p>
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px"
+            }}>
+              <div style={{
+                padding: "16px",
+                background: "rgba(15, 23, 42, 0.6)",
+                borderRadius: "6px",
+                border: "1px solid rgba(0, 240, 255, 0.2)"
+              }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  marginBottom: "8px"
+                }}>
+                  <span style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    background: "rgba(0, 240, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#00f0ff",
+                    fontWeight: 700,
+                    fontSize: "14px"
+                  }}>1</span>
+                  <strong style={{ color: "#00f0ff", fontSize: "16px" }}>Raw Data</strong>
+                </div>
+                <p style={{
+                  fontSize: "14px",
+                  color: "#cbd5e1",
+                  marginLeft: "44px",
+                  lineHeight: "1.8"
+                }}>
+                  CSV file containing gene identifiers and expression values across multiple samples
+                </p>
+              </div>
+
+              <div style={{
+                padding: "16px",
+                background: "rgba(15, 23, 42, 0.6)",
+                borderRadius: "6px",
+                border: "1px solid rgba(0, 240, 255, 0.2)"
+              }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  marginBottom: "8px"
+                }}>
+                  <span style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    background: "rgba(0, 240, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#00f0ff",
+                    fontWeight: 700,
+                    fontSize: "14px"
+                  }}>2</span>
+                  <strong style={{ color: "#00f0ff", fontSize: "16px" }}>Basic Processing</strong>
+                </div>
+                <p style={{
+                  fontSize: "14px",
+                  color: "#cbd5e1",
+                  marginLeft: "44px",
+                  lineHeight: "1.8"
+                }}>
+                  Parse CSV file, extract gene and sample information, calculate basic statistics 
+                  (gene count, sample count, mean expression)
+                </p>
+              </div>
+
+              <div style={{
+                padding: "16px",
+                background: "rgba(15, 23, 42, 0.6)",
+                borderRadius: "6px",
+                border: "1px solid rgba(0, 240, 255, 0.2)"
+              }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  marginBottom: "8px"
+                }}>
+                  <span style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    background: "rgba(0, 240, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#00f0ff",
+                    fontWeight: 700,
+                    fontSize: "14px"
+                  }}>3</span>
+                  <strong style={{ color: "#00f0ff", fontSize: "16px" }}>Fold Change Calculation</strong>
+                </div>
+                <p style={{
+                  fontSize: "14px",
+                  color: "#cbd5e1",
+                  marginLeft: "44px",
+                  lineHeight: "1.8"
+                }}>
+                  Compare expression between two conditions (Condition B / Condition A), classify genes 
+                  as upregulated (FC &gt; 1) or downregulated (FC &lt; 1)
+                </p>
+              </div>
+
+              <div style={{
+                padding: "16px",
+                background: "rgba(15, 23, 42, 0.6)",
+                borderRadius: "6px",
+                border: "1px solid rgba(0, 240, 255, 0.2)"
+              }}>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  marginBottom: "8px"
+                }}>
+                  <span style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    background: "rgba(0, 240, 255, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#00f0ff",
+                    fontWeight: 700,
+                    fontSize: "14px"
+                  }}>4</span>
+                  <strong style={{ color: "#00f0ff", fontSize: "16px" }}>Visualization</strong>
+                </div>
+                <p style={{
+                  fontSize: "14px",
+                  color: "#cbd5e1",
+                  marginLeft: "44px",
+                  lineHeight: "1.8"
+                }}>
+                  Generate bar charts comparing mean expression values across datasets, enabling 
+                  visual identification of patterns and trends
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div style={{
+            padding: "24px",
+            background: "rgba(239, 68, 68, 0.1)",
+            border: "2px solid rgba(239, 68, 68, 0.3)",
+            borderRadius: "8px"
+          }}>
+            <h3 style={{
+              fontSize: "20px",
+              fontWeight: 600,
+              color: "#fca5a5",
+              marginBottom: "12px"
+            }}>
+              Limitations
+            </h3>
+            <p className="info-text" style={{
+              fontSize: "15px",
+              lineHeight: "1.8",
+              marginBottom: "12px"
+            }}>
+              This is an <strong style={{ color: "#fca5a5" }}>educational, entry-level analysis</strong> 
+              designed for learning basic bioinformatics concepts. It is <strong style={{ color: "#fca5a5" }}>not a 
+              full RNA-seq pipeline</strong> and does not include:
+            </p>
+            <ul style={{
+              paddingLeft: "24px",
+              lineHeight: "2",
+              color: "#cbd5e1",
+              fontSize: "15px",
+              marginBottom: "12px"
+            }}>
+              <li>Advanced statistical methods (DESeq2, edgeR, or other differential expression tools)</li>
+              <li>Multiple testing correction (FDR, Bonferroni)</li>
+              <li>Quality control metrics (read mapping, alignment statistics)</li>
+              <li>Normalization beyond basic mean calculations</li>
+              <li>Biological pathway or enrichment analysis</li>
+              <li>Statistical significance testing (p-values, adjusted p-values)</li>
+            </ul>
+            <p className="info-text" style={{
+              fontSize: "15px",
+              lineHeight: "1.8"
+            }}>
+              For production-level RNA-seq analysis, researchers should use established pipelines and 
+              statistical tools. This project demonstrates fundamental concepts and basic analytical 
+              thinking suitable for entry-level bioinformatics positions.
+            </p>
+          </div>
+        </div>
+
+        <div className="scifi-card" style={{
+          padding: "30px",
+          marginBottom: "30px"
+        }}>
+          <h2 style={{
+            fontSize: "28px",
+            fontWeight: 600,
+            marginBottom: "20px",
+            color: "#cbd5e1"
+          }}>
             What is This System?
           </h2>
           <p className="info-text" style={{ marginBottom: "15px", lineHeight: "1.8", fontSize: "16px" }}>

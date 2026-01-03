@@ -8,11 +8,14 @@ generator client {
 }
 
 model GeneExpressionRun {
-  id        String   @id @default(uuid())
-  fileName  String?
-  fileHash  String   @unique
-  genes     Int
-  samples   Int
-  meanExpr  Float?
-  createdAt DateTime @default(now())
+  id                String   @id @default(uuid())
+  fileName          String?
+  fileHash          String   @unique
+  genes             Int
+  samples           Int
+  meanExpr          Float?
+  upregulatedGenes  Int?
+  downregulatedGenes Int?
+  foldChangeData    String?  // JSON string storing fold change analysis
+  createdAt         DateTime @default(now())
 }
