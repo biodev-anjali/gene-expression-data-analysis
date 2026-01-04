@@ -131,43 +131,67 @@ export function validateGEOFile(fileContent: string): boolean {
     return false
   }
   
-  // Check for common GEO metadata markers (more lenient)
-  const hasMetadata = fileContent.includes('!Series') || 
-                     fileContent.includes('!Sample') || 
-                     fileContent.includes('!Platform') ||
+  // Check for common GEO metadata markers (case-insensitive)
+  const contentUpper = fileContent.toUpperCase()
+  const hasMetadata = contentUpper.includes('!SERIES') || 
+                     contentUpper.includes('!SAMPLE') || 
+                     contentUpper.includes('!PLATFORM') ||
                      fileContent.includes('^') ||
-                     fileContent.includes('ID_REF') ||
-                     fileContent.includes('GSM') ||
-                     fileContent.includes('GSE')
+                     contentUpper.includes('ID_REF') ||
+                     contentUpper.includes('GSM') ||
+                     contentUpper.includes('GSE') ||
+                     fileContent.includes('Series_matrix_table_begin') ||
+                     fileContent.includes('matrix_table')
   
   // Check for tab-delimited or comma-delimited data
   const hasDelimited = fileContent.includes('\t') || fileContent.includes(',')
   
   // Check for data rows with numeric values (verify it's actual data, not just metadata)
-  const lines = fileContent.split('\n').slice(0, 100) // Check first 100 lines
+  const lines = fileContent.split('\n')
   let hasDataRows = false
+  let checkedLines = 0
+  const maxLinesToCheck = Math.min(500, lines.length) // Check up to 500 lines
   
-  for (const line of lines) {
-    if (!line.trim() || line.trim().startsWith('!') || line.trim().startsWith('^')) {
-      continue // Skip metadata lines
+  for (let i = 0; i < maxLinesToCheck && !hasDataRows; i++) {
+    const line = lines[i]
+    if (!line || !line.trim()) {
+      continue
+    }
+    
+    // Skip metadata lines
+    const trimmedLine = line.trim()
+    if (trimmedLine.startsWith('!') || trimmedLine.startsWith('^')) {
+      continue
     }
     
     // Try to parse as tab-delimited or comma-delimited
-    const values = line.split(/\t|,/).map(v => v.trim()).filter(v => v)
+    const values = line.split(/\t|,/).map(v => v.trim()).filter(v => v && v.length > 0)
     if (values.length >= 2) {
-      // Check if at least one value (after first column) is numeric
-      const hasNumeric = values.slice(1).some(v => {
-        const num = Number(v)
-        return !isNaN(num) && isFinite(num) && v.trim() !== ''
-      })
-      if (hasNumeric) {
+      // Check if at least 50% of values (after first column) are numeric
+      let numericCount = 0
+      for (let j = 1; j < values.length; j++) {
+        const val = values[j].trim()
+        // More lenient numeric check - allow scientific notation, negative numbers
+        if (val && /^-?\d*\.?\d+([eE][+-]?\d+)?$/.test(val)) {
+          numericCount++
+        }
+      }
+      // If at least 50% of values (after first column) are numeric, consider it a data row
+      if (numericCount >= Math.max(1, Math.floor((values.length - 1) * 0.5))) {
         hasDataRows = true
         break
       }
     }
+    checkedLines++
   }
   
-  return hasMetadata && hasDelimited && hasDataRows
+  // If we have metadata markers and delimited content, and either data rows OR the file is reasonably large, accept it
+  // Some GEO files might have very long metadata sections
+  const hasReasonableSize = fileContent.length > 1000 // At least 1KB of content
+  const hasTableMarkers = fileContent.includes('Series_matrix_table_begin') || 
+                         fileContent.includes('matrix_table')
+  
+  return (hasMetadata && hasDelimited) && (hasDataRows || (hasReasonableSize && hasTableMarkers))
 }
 
 /**

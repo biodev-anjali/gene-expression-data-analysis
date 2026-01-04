@@ -33,9 +33,28 @@ export async function POST(req: Request) {
     }
 
     // Validate file format
-    if (!validateGEOFile(fileContent)) {
+    const isValid = validateGEOFile(fileContent)
+    if (!isValid) {
+      // Add debug logging to help diagnose issues
+      const first500Chars = fileContent.substring(0, 500)
+      const hasMetadata = fileContent.toUpperCase().includes('!SERIES') || 
+                         fileContent.toUpperCase().includes('!SAMPLE') || 
+                         fileContent.toUpperCase().includes('!PLATFORM')
+      const hasTabs = fileContent.includes('\t')
+      const hasCommas = fileContent.includes(',')
+      const lineCount = fileContent.split('\n').length
+      
+      console.error('GEO file validation failed:', {
+        fileLength: fileContent.length,
+        lineCount,
+        hasMetadata,
+        hasTabs,
+        hasCommas,
+        first500Chars: first500Chars.replace(/\n/g, '\\n')
+      })
+      
       return NextResponse.json(
-        { error: "File does not appear to be a valid GEO Series Matrix File format" },
+        { error: "File does not appear to be a valid GEO Series Matrix File format. Please ensure the URL points to a Series Matrix File (usually ends with '_series_matrix.txt.gz')." },
         { status: 400 }
       )
     }
