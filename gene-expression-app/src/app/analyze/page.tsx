@@ -9,6 +9,10 @@ export default function Analyze() {
   const [geoUrl, setGeoUrl] = useState("")
   const [geoLoading, setGeoLoading] = useState(false)
   const [showGeoDownload, setShowGeoDownload] = useState(false)
+  const [speciesName, setSpeciesName] = useState("")
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [showSpeciesSearch, setShowSpeciesSearch] = useState(false)
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -32,7 +36,7 @@ export default function Analyze() {
         setRes(d.data)
       } else {
         setMsg("Analysis completed")
-        setRes(d.data)
+      setRes(d.data)
       }
     } catch (error) {
       console.error("Analysis error:", error)
@@ -107,6 +111,105 @@ export default function Analyze() {
     }
   }
 
+  async function handleSpeciesSearch() {
+    if (!speciesName.trim()) {
+      setMsg("Error: Please enter a species name")
+      return
+    }
+
+    setSearchLoading(true)
+    setMsg("")
+    setSearchResults([])
+
+    try {
+      const response = await fetch("/api/geo-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ speciesName: speciesName.trim(), maxResults: 20 })
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        setMsg(`Error: ${data.error}`)
+        return
+      }
+
+      if (data.datasets && data.datasets.length > 0) {
+        setSearchResults(data.datasets)
+        setMsg(`Found ${data.datasets.length} dataset(s) for "${speciesName}"`)
+      } else {
+        setSearchResults([])
+        setMsg(data.message || `No datasets found for "${speciesName}". Try a different species name.`)
+      }
+    } catch (error) {
+      console.error("Species search error:", error)
+      setMsg("Error searching for datasets. Please try again.")
+    } finally {
+      setSearchLoading(false)
+    }
+  }
+
+  async function handleDatasetDownload(dataset: any) {
+    setGeoLoading(true)
+    setMsg("")
+    setRes(null)
+
+    try {
+      // Download and convert GEO file using the dataset's download URL
+      const downloadResponse = await fetch("/api/geo-download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: dataset.downloadUrl })
+      })
+
+      const downloadData = await downloadResponse.json()
+
+      if (downloadData.error) {
+        setMsg(`Error: ${downloadData.error}`)
+        return
+      }
+
+      if (!downloadData.csvData) {
+        setMsg("Error: Failed to convert GEO file to CSV format")
+        return
+      }
+
+      // Create a File object from the CSV data
+      const csvBlob = new Blob([downloadData.csvData], { type: 'text/csv' })
+      const csvFile = new File([csvBlob], downloadData.fileName || `${dataset.gseId}.csv`, { type: 'text/csv' })
+
+      // Create FormData and submit to analyzer
+      const formData = new FormData()
+      formData.append('file', csvFile)
+
+      const analyzeResponse = await fetch("/api/analyze", {
+        method: "POST",
+        body: formData
+      })
+
+      const analyzeData = await analyzeResponse.json()
+
+      if (analyzeData.error) {
+        setMsg(`Error: ${analyzeData.error}`)
+        return
+      }
+
+      if (analyzeData.alreadyAnalyzed) {
+        setMsg(`Dataset ${dataset.gseId} already analyzed`)
+        setRes(analyzeData.data)
+      } else {
+        setMsg(`Analysis completed for ${dataset.gseId}: ${dataset.title}`)
+        setRes(analyzeData.data)
+      }
+    } catch (error) {
+      console.error("Dataset download error:", error)
+      setMsg("Error downloading or analyzing dataset. Please try again.")
+    } finally {
+      setGeoLoading(false)
+    }
+  }
+
   return (
     <main style={{
       position: "relative",
@@ -143,6 +246,214 @@ export default function Analyze() {
             sample count, and mean expression values.
           </p>
 
+          {/* Species Search Section */}
+          <div style={{
+            padding: "24px",
+            backgroundColor: "rgba(139, 92, 246, 0.1)",
+            border: "2px solid rgba(139, 92, 246, 0.3)",
+            borderRadius: "8px",
+            marginBottom: "24px"
+          }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "16px",
+              cursor: "pointer"
+            }}
+            onClick={() => setShowSpeciesSearch(!showSpeciesSearch)}
+            >
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px"
+              }}>
+                <span style={{
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  color: "#c4b5fd"
+                }}>
+                  Search by Species Name
+                </span>
+                <span style={{
+                  fontSize: "12px",
+                  color: "#94a3b8",
+                  padding: "4px 8px",
+                  background: "rgba(139, 92, 246, 0.2)",
+                  borderRadius: "4px"
+                }}>
+                  Auto-Download
+                </span>
+              </div>
+              <span style={{
+                fontSize: "20px",
+                color: "#c4b5fd",
+                transform: showSpeciesSearch ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.3s ease"
+              }}>
+                ▼
+              </span>
+            </div>
+
+            {showSpeciesSearch && (
+              <div style={{ marginTop: "20px" }}>
+                <p className="info-text" style={{
+                  fontSize: "14px",
+                  lineHeight: "1.8",
+                  marginBottom: "16px"
+                }}>
+                  Enter a species name (e.g., "Homo sapiens", "Mus musculus", "human", "mouse") 
+                  to search NCBI GEO for available gene expression datasets. Select a dataset 
+                  to automatically download and analyze it.
+                </p>
+
+                <div style={{ marginBottom: "16px" }}>
+                  <input
+                    type="text"
+                    value={speciesName}
+                    onChange={(e) => setSpeciesName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !searchLoading) {
+                        handleSpeciesSearch()
+                      }
+                    }}
+                    placeholder="Enter species name (e.g., Homo sapiens, human, mouse)"
+                    className="scifi-input"
+                    style={{
+                      width: "100%",
+                      marginBottom: "12px"
+                    }}
+                    disabled={searchLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSpeciesSearch}
+                    className="scifi-button"
+                    disabled={searchLoading || !speciesName.trim()}
+                    style={{
+                      width: "100%"
+                    }}
+                  >
+                    {searchLoading ? "Searching NCBI GEO..." : "Search GEO Datasets"}
+                  </button>
+                </div>
+
+                {searchResults.length > 0 && (
+                  <div style={{
+                    marginTop: "20px",
+                    maxHeight: "500px",
+                    overflowY: "auto",
+                    border: "1px solid rgba(139, 92, 246, 0.3)",
+                    borderRadius: "8px",
+                    padding: "16px"
+                  }}>
+                    <h3 style={{
+                      fontSize: "16px",
+                      fontWeight: 600,
+                      color: "#c4b5fd",
+                      marginBottom: "16px"
+                    }}>
+                      Available Datasets ({searchResults.length})
+                    </h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      {searchResults.map((dataset, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            padding: "16px",
+                            background: "rgba(15, 23, 42, 0.6)",
+                            border: "1px solid rgba(139, 92, 246, 0.2)",
+                            borderRadius: "8px",
+                            transition: "all 0.3s ease"
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "rgba(139, 92, 246, 0.5)"
+                            e.currentTarget.style.background = "rgba(15, 23, 42, 0.8)"
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "rgba(139, 92, 246, 0.2)"
+                            e.currentTarget.style.background = "rgba(15, 23, 42, 0.6)"
+                          }}
+                        >
+                          <div style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "start",
+                            marginBottom: "12px",
+                            gap: "16px"
+                          }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{
+                                fontSize: "16px",
+                                fontWeight: 600,
+                                color: "#e0f2fe",
+                                marginBottom: "8px"
+                              }}>
+                                {dataset.gseId}
+                              </div>
+                              <div style={{
+                                fontSize: "14px",
+                                color: "#cbd5e1",
+                                marginBottom: "8px",
+                                lineHeight: "1.6"
+                              }}>
+                                {dataset.title}
+                              </div>
+                              <div style={{
+                                display: "flex",
+                                gap: "16px",
+                                fontSize: "12px",
+                                color: "#94a3b8",
+                                flexWrap: "wrap"
+                              }}>
+                                <span>Samples: <span style={{ color: "#00f0ff" }}>{dataset.samples}</span></span>
+                                <span>Platform: <span style={{ color: "#00f0ff" }}>{dataset.platform}</span></span>
+                                {dataset.pubDate && (
+                                  <span>Date: <span style={{ color: "#00f0ff" }}>{dataset.pubDate}</span></span>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDatasetDownload(dataset)}
+                              className="scifi-button"
+                              disabled={geoLoading}
+                              style={{
+                                padding: "8px 16px",
+                                fontSize: "13px",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              {geoLoading ? "Processing..." : "Download & Analyze"}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{
+                  marginTop: "16px",
+                  padding: "12px",
+                  background: "rgba(15, 23, 42, 0.6)",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                  color: "#94a3b8"
+                }}>
+                  <p style={{ marginBottom: "8px", fontWeight: 600, color: "#c4b5fd" }}>
+                    Examples:
+                  </p>
+                  <ul style={{ paddingLeft: "20px", lineHeight: "1.8" }}>
+                    <li>Scientific names: "Homo sapiens", "Mus musculus", "Drosophila melanogaster"</li>
+                    <li>Common names: "human", "mouse", "fruit fly", "yeast"</li>
+                    <li>Other: "Arabidopsis thaliana", "Escherichia coli"</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* NCBI GEO Download Section */}
           <div style={{
             padding: "24px",
@@ -170,16 +481,7 @@ export default function Analyze() {
                   fontWeight: 700,
                   color: "#00f0ff"
                 }}>
-                  Download from NCBI GEO
-                </span>
-                <span style={{
-                  fontSize: "12px",
-                  color: "#94a3b8",
-                  padding: "4px 8px",
-                  background: "rgba(0, 240, 255, 0.1)",
-                  borderRadius: "4px"
-                }}>
-                  New
+                  Download from NCBI GEO (Direct URL)
                 </span>
               </div>
               <span style={{
@@ -331,8 +633,8 @@ export default function Analyze() {
                 marginBottom: "12px"
               }}>
                 Required CSV Structure:
-              </p>
-              <ul className="info-text" style={{
+            </p>
+            <ul className="info-text" style={{
                 fontSize: "14px",
                 paddingLeft: "24px",
                 lineHeight: "2",
@@ -396,51 +698,51 @@ export default function Analyze() {
         {res && (
           <>
             <div className="scifi-card fade-in" style={{ padding: "30px", marginBottom: "20px" }}>
-              <h2 style={{
+            <h2 style={{
                 fontSize: "24px",
-                fontWeight: 600,
-                marginBottom: "20px",
-                color: "#cbd5e1"
-              }}>
+              fontWeight: 600,
+              marginBottom: "20px",
+              color: "#cbd5e1"
+            }}>
                 Basic Statistics
-              </h2>
+            </h2>
+            <div style={{
+              display: "grid",
+              gap: "15px"
+            }}>
               <div style={{
-                display: "grid",
-                gap: "15px"
+                display: "flex",
+                justifyContent: "space-between",
+                paddingBottom: "12px",
+                borderBottom: "1px solid rgba(0, 240, 255, 0.1)"
               }}>
-                <div style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  paddingBottom: "12px",
-                  borderBottom: "1px solid rgba(0, 240, 255, 0.1)"
-                }}>
-                  <span className="info-text">Genes:</span>
-                  <span style={{ color: "#00f0ff", fontWeight: 600 }}>
-                    {res.genes.toLocaleString()}
-                  </span>
-                </div>
-                <div style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  paddingBottom: "12px",
-                  borderBottom: "1px solid rgba(0, 240, 255, 0.1)"
-                }}>
-                  <span className="info-text">Samples:</span>
-                  <span style={{ color: "#00f0ff", fontWeight: 600 }}>
-                    {res.samples.toLocaleString()}
-                  </span>
-                </div>
-                <div style={{
-                  display: "flex",
-                  justifyContent: "space-between"
-                }}>
-                  <span className="info-text">Mean Expression:</span>
-                  <span style={{ color: "#00f0ff", fontWeight: 600 }}>
-                    {res.meanExpr?.toFixed(3) || "N/A"}
-                  </span>
-                </div>
+                <span className="info-text">Genes:</span>
+                <span style={{ color: "#00f0ff", fontWeight: 600 }}>
+                  {res.genes.toLocaleString()}
+                </span>
+              </div>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                paddingBottom: "12px",
+                borderBottom: "1px solid rgba(0, 240, 255, 0.1)"
+              }}>
+                <span className="info-text">Samples:</span>
+                <span style={{ color: "#00f0ff", fontWeight: 600 }}>
+                  {res.samples.toLocaleString()}
+                </span>
+              </div>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between"
+              }}>
+                <span className="info-text">Mean Expression:</span>
+                <span style={{ color: "#00f0ff", fontWeight: 600 }}>
+                  {res.meanExpr?.toFixed(3) || "N/A"}
+                </span>
               </div>
             </div>
+          </div>
 
             {res.samples >= 2 && res.foldChangeData && (
               <div className="scifi-card fade-in" style={{ padding: "30px", marginBottom: "20px" }}>

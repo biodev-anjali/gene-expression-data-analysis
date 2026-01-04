@@ -13,6 +13,17 @@ export interface ParsedGEOData {
   }
 }
 
+export interface GEODataset {
+  gseId: string          // e.g., "GSE12345"
+  title: string          // Dataset title
+  samples: number        // Number of samples
+  platform: string       // Platform type
+  organism: string       // Species name
+  downloadUrl: string    // Direct URL to Series Matrix File
+  summary?: string        // Dataset summary
+  pubDate?: string        // Publication date
+}
+
 /**
  * Parse Series Matrix File format from NCBI GEO
  * @param fileContent - Raw file content as string
@@ -167,5 +178,198 @@ export async function downloadGEOFile(url: string): Promise<string> {
     }
     throw new Error(`Network error: ${error.message || 'Unknown error'}`)
   }
+}
+
+/**
+ * Search NCBI GEO for datasets by species name
+ * @param speciesName - Species name (e.g., "Homo sapiens", "Mus musculus")
+ * @param maxResults - Maximum number of results to return (default: 20)
+ * @returns Array of GEO dataset information
+ */
+export async function searchGEOBySpecies(speciesName: string, maxResults: number = 20): Promise<GEODataset[]> {
+  if (!speciesName || speciesName.trim().length === 0) {
+    throw new Error('Species name is required')
+  }
+
+  try {
+    // Normalize species name - handle common variations
+    const normalizedSpecies = normalizeSpeciesName(speciesName.trim())
+    
+    // Build search query for NCBI E-utilities
+    // Search for expression profiling datasets for the species
+    const query = `"${normalizedSpecies}"[Organism] AND ("Expression profiling by array"[DataSet Type] OR "Expression profiling by high throughput sequencing"[DataSet Type])`
+    
+    // Step 1: Search for GSE IDs using esearch
+    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gds&term=${encodeURIComponent(query)}&retmax=${maxResults}&retmode=json`
+    
+    // Create abort controller for timeout
+    const searchController = new AbortController()
+    const searchTimeoutId = setTimeout(() => searchController.abort(), 30000) // 30 second timeout
+
+    const searchResponse = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; GeneExpressionAnalyzer/1.0)'
+      },
+      signal: searchController.signal
+    })
+
+    clearTimeout(searchTimeoutId)
+
+    if (!searchResponse.ok) {
+      throw new Error(`NCBI search failed: ${searchResponse.status}`)
+    }
+
+    const searchData = await searchResponse.json()
+    const gseIds = searchData.esearchresult?.idlist || []
+
+    if (gseIds.length === 0) {
+      return []
+    }
+
+    // Step 2: Get detailed information using esummary
+    const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=gds&id=${gseIds.join(',')}&retmode=json`
+    
+    // Add delay to respect rate limits (3 requests/second)
+    await new Promise(resolve => setTimeout(resolve, 350))
+    
+    // Create abort controller for timeout
+    const summaryController = new AbortController()
+    const summaryTimeoutId = setTimeout(() => summaryController.abort(), 30000) // 30 second timeout
+
+    const summaryResponse = await fetch(summaryUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; GeneExpressionAnalyzer/1.0)'
+      },
+      signal: summaryController.signal
+    })
+
+    clearTimeout(summaryTimeoutId)
+
+    if (!summaryResponse.ok) {
+      throw new Error(`NCBI summary failed: ${summaryResponse.status}`)
+    }
+
+    const summaryData = await summaryResponse.json()
+    const results = summaryData.result || {}
+
+    // Parse results into GEODataset format
+    const datasets: GEODataset[] = []
+    
+    for (const id of gseIds) {
+      const dataset = results[id]
+      if (!dataset) continue
+
+      // Extract GSE ID - try multiple possible fields
+      let gseId = dataset.accession || dataset.gse || dataset.id || id
+      
+      // If it's a GDS ID, we need to extract GSE from it or skip
+      // GDS IDs are like "200012345" and we need to find the corresponding GSE
+      // For now, if it doesn't start with GSE, try to construct from accession
+      if (!gseId.startsWith('GSE')) {
+        // Try to find GSE in accession or other fields
+        const gseMatch = (dataset.accession || dataset.title || '').match(/GSE\d+/)
+        if (gseMatch) {
+          gseId = gseMatch[0]
+        } else {
+          // Skip if we can't find a valid GSE ID
+          continue
+        }
+      }
+
+      // Build download URL for Series Matrix File
+      const downloadUrl = constructSeriesMatrixUrl(gseId)
+
+      // Extract dataset information with fallbacks
+      const title = dataset.title || dataset.summary || dataset['dataset_title'] || 'Untitled Dataset'
+      const samples = parseInt(dataset.samples || dataset['sample_count'] || '0', 10)
+      const platform = dataset.platform || dataset['platform_id'] || dataset['platform_name'] || 'Unknown'
+      const organism = dataset.organism || dataset['organism_name'] || normalizedSpecies
+      const summary = dataset.summary || dataset['dataset_description'] || undefined
+      const pubDate = dataset.pubdate || dataset['pub_date'] || dataset['publication_date'] || undefined
+
+      datasets.push({
+        gseId: gseId,
+        title: title,
+        samples: samples,
+        platform: platform,
+        organism: organism,
+        downloadUrl: downloadUrl,
+        summary: summary,
+        pubDate: pubDate
+      })
+    }
+
+    return datasets
+
+  } catch (error: any) {
+    if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+      throw new Error('Search timeout. Please try again.')
+    }
+    if (error.message) {
+      throw error
+    }
+    throw new Error(`Search error: ${error.message || 'Unknown error'}`)
+  }
+}
+
+/**
+ * Normalize species name to handle common variations
+ */
+function normalizeSpeciesName(speciesName: string): string {
+  const lower = speciesName.toLowerCase()
+  
+  // Common species name mappings
+  const mappings: Record<string, string> = {
+    'human': 'Homo sapiens',
+    'humans': 'Homo sapiens',
+    'mouse': 'Mus musculus',
+    'mice': 'Mus musculus',
+    'rat': 'Rattus norvegicus',
+    'rats': 'Rattus norvegicus',
+    'fruit fly': 'Drosophila melanogaster',
+    'drosophila': 'Drosophila melanogaster',
+    'c. elegans': 'Caenorhabditis elegans',
+    'celegans': 'Caenorhabditis elegans',
+    'zebrafish': 'Danio rerio',
+    'yeast': 'Saccharomyces cerevisiae',
+    'e. coli': 'Escherichia coli',
+    'ecoli': 'Escherichia coli',
+    'arabidopsis': 'Arabidopsis thaliana'
+  }
+
+  if (mappings[lower]) {
+    return mappings[lower]
+  }
+
+  // If it looks like a scientific name (two words), return as-is
+  if (speciesName.split(/\s+/).length >= 2) {
+    return speciesName
+  }
+
+  // Otherwise, try to capitalize properly
+  return speciesName.split(/\s+/).map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  ).join(' ')
+}
+
+/**
+ * Construct Series Matrix File download URL from GSE ID
+ * NCBI GEO stores files in directories like: GSE12nnn/GSE12345/matrix/
+ */
+function constructSeriesMatrixUrl(gseId: string): string {
+  // Extract number from GSE ID (e.g., GSE12345 -> 12345)
+  const match = gseId.match(/GSE(\d+)/)
+  if (!match) {
+    throw new Error(`Invalid GSE ID format: ${gseId}`)
+  }
+
+  const number = match[1]
+  // Construct path: GSE12nnn for GSE12345 (last 3 digits replaced with nnn)
+  // For GSE12345, number = "12345", slice(0, -3) = "12", so seriesPath = "GSE12nnn"
+  const seriesPath = `GSE${number.slice(0, -3)}nnn`
+  
+  // Primary URL: FTP path to Series Matrix File
+  // Format: https://ftp.ncbi.nlm.nih.gov/geo/series/GSE12nnn/GSE12345/matrix/GSE12345_series_matrix.txt.gz
+  return `https://ftp.ncbi.nlm.nih.gov/geo/series/${seriesPath}/${gseId}/matrix/${gseId}_series_matrix.txt.gz`
 }
 
