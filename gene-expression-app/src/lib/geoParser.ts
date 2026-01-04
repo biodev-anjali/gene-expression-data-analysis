@@ -3,6 +3,11 @@
  * Parses NCBI GEO Series Matrix File format and converts to CSV
  */
 
+import zlib from 'zlib'
+import { promisify } from 'util'
+
+const gunzip = promisify(zlib.gunzip)
+
 export interface ParsedGEOData {
   csvData: string
   metadata: {
@@ -126,11 +131,43 @@ export function validateGEOFile(fileContent: string): boolean {
     return false
   }
   
-  // Check for common GEO markers
-  const hasMetadata = fileContent.includes('!Series') || fileContent.includes('!Sample') || fileContent.includes('!Platform')
-  const hasTabDelimited = fileContent.includes('\t')
+  // Check for common GEO metadata markers (more lenient)
+  const hasMetadata = fileContent.includes('!Series') || 
+                     fileContent.includes('!Sample') || 
+                     fileContent.includes('!Platform') ||
+                     fileContent.includes('^') ||
+                     fileContent.includes('ID_REF') ||
+                     fileContent.includes('GSM') ||
+                     fileContent.includes('GSE')
   
-  return hasMetadata && hasTabDelimited
+  // Check for tab-delimited or comma-delimited data
+  const hasDelimited = fileContent.includes('\t') || fileContent.includes(',')
+  
+  // Check for data rows with numeric values (verify it's actual data, not just metadata)
+  const lines = fileContent.split('\n').slice(0, 100) // Check first 100 lines
+  let hasDataRows = false
+  
+  for (const line of lines) {
+    if (!line.trim() || line.trim().startsWith('!') || line.trim().startsWith('^')) {
+      continue // Skip metadata lines
+    }
+    
+    // Try to parse as tab-delimited or comma-delimited
+    const values = line.split(/\t|,/).map(v => v.trim()).filter(v => v)
+    if (values.length >= 2) {
+      // Check if at least one value (after first column) is numeric
+      const hasNumeric = values.slice(1).some(v => {
+        const num = Number(v)
+        return !isNaN(num) && isFinite(num) && v.trim() !== ''
+      })
+      if (hasNumeric) {
+        hasDataRows = true
+        break
+      }
+    }
+  }
+  
+  return hasMetadata && hasDelimited && hasDataRows
 }
 
 /**
@@ -162,6 +199,43 @@ export async function downloadGEOFile(url: string): Promise<string> {
       throw new Error(`Failed to download file: ${response.status} ${response.statusText}`)
     }
     
+    // Check if file is gzipped
+    const contentType = response.headers.get('content-type') || ''
+    const contentEncoding = response.headers.get('content-encoding') || ''
+    const isGzipped = url.endsWith('.gz') || 
+                     contentType.includes('gzip') || 
+                     contentType.includes('application/x-gzip') ||
+                     contentEncoding.includes('gzip')
+    
+    if (isGzipped) {
+      // Download as ArrayBuffer for gzip decompression
+      const arrayBuffer = await response.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+      
+      // Check for gzip magic bytes (0x1f 0x8b) as additional verification
+      const isGzipMagic = buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b
+      
+      if (isGzipMagic || isGzipped) {
+        try {
+          // Decompress gzip file
+          const decompressed = await gunzip(buffer)
+          const content = decompressed.toString('utf-8')
+          
+          if (!content || content.trim().length === 0) {
+            throw new Error('Downloaded file is empty after decompression')
+          }
+          
+          return content
+        } catch (decompressError: any) {
+          if (decompressError.code === 'Z_DATA_ERROR' || decompressError.code === 'Z_BUF_ERROR') {
+            throw new Error('File appears to be corrupted or not a valid gzip file')
+          }
+          throw new Error(`Failed to decompress gzip file: ${decompressError.message}`)
+        }
+      }
+    }
+    
+    // Not gzipped or decompression not needed - read as text
     const content = await response.text()
     
     if (!content || content.trim().length === 0) {
