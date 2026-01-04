@@ -4,38 +4,56 @@ import crypto from "crypto"
 import Papa from "papaparse"
 
 export async function POST(req: Request) {
-  const formData = await req.formData()
-  const file = formData.get("file") as File
+  try {
+    const formData = await req.formData()
+    const file = formData.get("file") as File
 
-  if (!file) {
-    return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
-  }
+    if (!file) {
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
+    }
 
-  const buffer = Buffer.from(await file.arrayBuffer())
-  const fileHash = crypto.createHash("sha256").update(buffer).digest("hex")
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const fileHash = crypto.createHash("sha256").update(buffer).digest("hex")
 
-  const existing = await prisma.geneExpressionRun.findUnique({
-    where: { fileHash },
-  })
+    const existing = await prisma.geneExpressionRun.findUnique({
+      where: { fileHash },
+    })
 
-  if (existing) {
-    return NextResponse.json({ alreadyAnalyzed: true, data: existing })
-  }
+    if (existing) {
+      return NextResponse.json({ alreadyAnalyzed: true, data: existing })
+    }
 
-  const csvText = buffer.toString("utf-8")
-  const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true })
-  const rows = parsed.data as any[]
+    const csvText = buffer.toString("utf-8")
+    const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true })
+    
+    // Check for parsing errors
+    if (parsed.errors && parsed.errors.length > 0) {
+      return NextResponse.json({ 
+        error: `CSV parsing error: ${parsed.errors[0].message}` 
+      }, { status: 400 })
+    }
+    
+    const rows = parsed.data as any[]
 
-  // Filter out empty rows
-  const validRows = rows.filter(row => row && Object.keys(row).length > 0)
-  
-  if (validRows.length === 0) {
-    return NextResponse.json({ error: "CSV file is empty or invalid" }, { status: 400 })
-  }
+    // Filter out empty rows
+    const validRows = rows.filter(row => row && Object.keys(row).length > 0)
+    
+    if (validRows.length === 0) {
+      return NextResponse.json({ error: "CSV file is empty or invalid" }, { status: 400 })
+    }
 
-  const genes = validRows.length
-  const firstRow = validRows[0]
-  const samples = Object.keys(firstRow).filter(key => key && key.trim() !== '').length - 1
+    const genes = validRows.length
+    const firstRow = validRows[0]
+    
+    // Validate that we have at least one data column
+    const allKeys = Object.keys(firstRow).filter(key => key && key.trim() !== '')
+    if (allKeys.length < 2) {
+      return NextResponse.json({ 
+        error: "CSV must have at least one gene column and one sample column" 
+      }, { status: 400 })
+    }
+    
+    const samples = allKeys.length - 1
 
   let sum = 0
   let count = 0
@@ -111,18 +129,25 @@ export async function POST(req: Request) {
     }
   }
 
-  const saved = await prisma.geneExpressionRun.create({
-    data: {
-      fileName: file.name,
-      fileHash,
-      genes,
-      samples,
-      meanExpr,
-      upregulatedGenes,
-      downregulatedGenes,
-      foldChangeData,
-    },
-  })
+    const saved = await prisma.geneExpressionRun.create({
+      data: {
+        fileName: file.name,
+        fileHash,
+        genes,
+        samples,
+        meanExpr,
+        upregulatedGenes,
+        downregulatedGenes,
+        foldChangeData,
+      },
+    })
 
-  return NextResponse.json({ alreadyAnalyzed: false, data: saved })
+    return NextResponse.json({ alreadyAnalyzed: false, data: saved })
+    
+  } catch (error: any) {
+    console.error("Analysis API error:", error)
+    return NextResponse.json({ 
+      error: error.message || "An error occurred during analysis. Please check your file format." 
+    }, { status: 500 })
+  }
 }

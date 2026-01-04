@@ -11,15 +11,29 @@ export default function Analyze() {
     e.preventDefault()
     setLoading(true)
     setMsg("")
+    setRes(null) // Clear previous results
     const formData = new FormData(e.target as HTMLFormElement)
     
     try {
       const r = await fetch("/api/analyze", { method: "POST", body: formData })
       const d = await r.json()
-      setMsg(d.alreadyAnalyzed ? "Already analyzed sample" : "Analysis completed")
-      setRes(d.data)
+      
+      // Check for API errors first
+      if (d.error) {
+        setMsg(`Error: ${d.error}`)
+        return
+      }
+      
+      if (d.alreadyAnalyzed) {
+        setMsg("Already analyzed sample")
+        setRes(d.data)
+      } else {
+        setMsg("Analysis completed")
+        setRes(d.data)
+      }
     } catch (error) {
-      setMsg("Error analyzing file")
+      console.error("Analysis error:", error)
+      setMsg("Error analyzing file. Please check the file format and try again.")
     } finally {
       setLoading(false)
     }
