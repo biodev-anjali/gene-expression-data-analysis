@@ -17,9 +17,14 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     })
 
+    console.log(`✅ History API: Fetched ${runs.length} analysis runs`)
     return NextResponse.json(runs)
   } catch (error: any) {
-    console.error("History API error:", error)
+    console.error("❌ History API error:", {
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    })
     
     // Check for specific Prisma error codes
     const errorCode = error.code || error.meta?.code
@@ -34,25 +39,16 @@ export async function GET() {
       errorMessage = "Database connection was closed. Please try again."
     }
     
-    // Return clean JSON error instead of crashing
-    // In production, return empty array for graceful degradation
-    // In development, return error details for debugging
+    // Always return an array for graceful degradation
+    // Frontend can handle empty history gracefully
+    // Log error details in development mode
     if (process.env.NODE_ENV === "development") {
-      return NextResponse.json(
-        { 
-          error: errorMessage,
-          details: error.message,
-          code: errorCode,
-          // Return empty array so frontend doesn't break
-          data: [],
-        },
-        { status: 500 }
-      )
-    } else {
-      // Production: return empty array for graceful degradation
-      // Frontend can handle empty history gracefully
-      return NextResponse.json([])
+      console.warn("⚠️ History API: Returning empty array due to error:", errorMessage)
     }
+    
+    // Return empty array so frontend doesn't break
+    // This ensures the app remains functional even if database is unavailable
+    return NextResponse.json([])
   }
 }
 

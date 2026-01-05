@@ -229,10 +229,14 @@ export async function POST(req: Request) {
           },
         })
         
+        // Log successful save for debugging
+        console.log(`✅ Analysis saved to database: ${saved.id} (${saved.fileName})`)
+        
         // Add chart-ready data to saved result
         const savedWithCharts = {
           ...saved,
           chartData: analysisResult.chartData,
+          savedToDatabase: true, // Explicitly mark as saved
         }
         
         // Successfully saved - return with database ID and chart data
@@ -242,7 +246,11 @@ export async function POST(req: Request) {
           savedToDatabase: true,
         })
       } catch (dbError: any) {
-        console.error("Database save error (returning analysis anyway):", dbError.message)
+        console.error("❌ Database save error (returning analysis anyway):", {
+          message: dbError.message,
+          code: dbError.code,
+          meta: dbError.meta
+        })
         
         // Handle unique constraint violations (duplicate fileHash - race condition)
         if (dbError.code === "P2002") {
@@ -252,6 +260,7 @@ export async function POST(req: Request) {
               where: { fileHash },
             })
             if (existingRun) {
+              console.log(`✅ Found existing analysis (race condition): ${existingRun.id}`)
               // Add chart-ready data to existing result
               const existingWithCharts = {
                 ...existingRun,
@@ -260,6 +269,7 @@ export async function POST(req: Request) {
                   distributionData: [], // Will be calculated if needed
                   expressionValues: [],
                 },
+                savedToDatabase: true,
               }
               return NextResponse.json({ 
                 alreadyAnalyzed: true, 
@@ -268,16 +278,20 @@ export async function POST(req: Request) {
               })
             }
           } catch (retryError: any) {
-            console.error("Error fetching existing run:", retryError.message)
+            console.error("❌ Error fetching existing run:", retryError.message)
             // Fall through to return analysis without DB save
           }
         }
         
         // Database save failed, but return analysis results anyway
         // This ensures users can still see their analysis even if DB is down
+        console.warn("⚠️ Analysis completed but NOT saved to database. Results are temporary.")
         return NextResponse.json({ 
           alreadyAnalyzed: false, 
-          data: analysisResult,
+          data: {
+            ...analysisResult,
+            savedToDatabase: false,
+          },
           savedToDatabase: false,
           warning: "Analysis completed but could not be saved to database. Results are temporary.",
         })
