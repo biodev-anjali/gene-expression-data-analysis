@@ -6,7 +6,6 @@ import { createContext, useContext, useState, ReactNode } from "react"
  * 
  * This context stores the latest analysis result so that:
  * - Charts page can immediately display results without reload
- * - History page can show newly completed analyses
  * - Analysis state persists across navigation
  */
 interface AnalysisResult {

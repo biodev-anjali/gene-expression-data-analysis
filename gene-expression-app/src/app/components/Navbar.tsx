@@ -9,7 +9,6 @@ export default function Navbar() {
     { href: "/", label: "Home" },
     { href: "/analyze", label: "Analyzer" },
     { href: "/charts", label: "Charts" },
-    { href: "/history", label: "History" },
     { href: "/documentation", label: "Documentation" },
   ]
 

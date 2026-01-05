@@ -19,32 +19,11 @@ import {
 } from "recharts"
 
 export default function Charts() {
-  const [runs, setRuns] = useState<any[]>([])
   const [selected, setSelected] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
   const { latestAnalysis } = useAnalysis()
 
-  // Fetch history and merge with latest analysis
-  useEffect(() => {
-    fetch("/api/history")
-      .then(r => r.json())
-      .then(data => {
-        setRuns(data)
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
-  }, [])
-
-  // Update runs when new analysis completes
-  useEffect(() => {
-    if (latestAnalysis && latestAnalysis.savedToDatabase) {
-      // Check if this analysis is already in runs
-      const exists = runs.find(r => r.id === latestAnalysis.id || r.fileHash === latestAnalysis.fileHash)
-      if (!exists) {
-        setRuns(prev => [latestAnalysis, ...prev])
-      }
-    }
-  }, [latestAnalysis])
+  // Use latest analysis from context for charts
+  const runs = latestAnalysis ? [latestAnalysis] : []
 
   return (
     <main style={{
@@ -77,9 +56,8 @@ export default function Charts() {
             lineHeight: "1.8",
             marginBottom: "24px"
           }}>
-            Select multiple datasets from your analysis history to generate visual comparisons. 
-            Compare mean expression values across different experiments, conditions, or time points 
-            to identify patterns and trends in your gene expression data.
+            Visualize your gene expression analysis results. The charts below help you understand 
+            expression patterns, fold changes, and distribution of values across your dataset.
           </p>
 
           <div style={{
@@ -147,19 +125,13 @@ export default function Charts() {
           </div>
         </div>
 
-        {loading && (
+        {runs.length === 0 && (
           <div className="scifi-card" style={{ padding: "40px", textAlign: "center" }}>
-            <p className="info-text">Loading analysis history...</p>
+            <p className="info-text">No analysis data available. Upload a CSV file in the Analyzer page to generate charts.</p>
           </div>
         )}
 
-        {!loading && runs.length === 0 && (
-          <div className="scifi-card" style={{ padding: "40px", textAlign: "center" }}>
-            <p className="info-text">No analysis history found. Upload files in the Analyzer page first.</p>
-          </div>
-        )}
-
-        {!loading && runs.length > 0 && (
+        {runs.length > 0 && (
           <div className="scifi-card" style={{ padding: "30px", marginBottom: "30px" }}>
             <h2 style={{
               fontSize: "24px",
@@ -167,7 +139,7 @@ export default function Charts() {
               marginBottom: "24px",
               color: "#cbd5e1"
             }}>
-              Available Datasets
+              Analysis Dataset
             </h2>
             <div style={{ display: "grid", gap: "16px" }}>
               {runs.map(r => (
@@ -495,51 +467,6 @@ export default function Charts() {
           </div>
         )}
 
-        {/* Show latest analysis if available and not in selected */}
-        {latestAnalysis && !selected.find(s => s.id === latestAnalysis.id || s.fileHash === latestAnalysis.fileHash) && (
-          <div className="scifi-card fade-in" style={{ 
-            padding: "30px", 
-            marginTop: "30px",
-            border: "2px solid rgba(34, 197, 94, 0.4)",
-            background: "rgba(34, 197, 94, 0.1)"
-          }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              marginBottom: "20px"
-            }}>
-              <span style={{ fontSize: "20px" }}>✨</span>
-              <h2 style={{
-                fontSize: "20px",
-                fontWeight: 600,
-                color: "#86efac"
-              }}>
-                Latest Analysis
-              </h2>
-            </div>
-            <p className="info-text" style={{ marginBottom: "16px" }}>
-              {latestAnalysis.fileName || "Recent Analysis"} - {latestAnalysis.genes} genes, {latestAnalysis.samples} samples
-            </p>
-            <button
-              onClick={() => {
-                const analysisInRuns = runs.find(r => r.id === latestAnalysis.id || r.fileHash === latestAnalysis.fileHash)
-                if (analysisInRuns) {
-                  setSelected([analysisInRuns])
-                } else {
-                  setSelected([latestAnalysis])
-                }
-              }}
-              className="scifi-button"
-              style={{
-                padding: "8px 16px",
-                fontSize: "14px"
-              }}
-            >
-              View Charts for This Analysis
-            </button>
-          </div>
-        )}
       </div>
     </main>
   )

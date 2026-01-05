@@ -40,7 +40,7 @@ export default function Analyze() {
         return
       }
 
-      // Store in context for Charts and History pages
+      // Store in context for Charts page
       if (d.data) {
         setLatestAnalysis(d.data)
       }
@@ -108,7 +108,7 @@ export default function Analyze() {
             lineHeight: "1.8"
           }}>
             Upload a CSV file containing gene expression data. Analysis will start automatically 
-            when you select a file. Results are saved to your analysis history for future reference.
+            when you select a file. View your results and charts below.
           </p>
 
           {/* File Upload Section */}
@@ -229,8 +229,7 @@ export default function Analyze() {
             }}>
               <li>Click "Choose File" and select a CSV file with gene expression data</li>
               <li>Analysis will start automatically - no need to click any button</li>
-              <li>View results below, or check the <strong style={{ color: "#00f0ff" }}>Charts</strong> and <strong style={{ color: "#00f0ff" }}>History</strong> pages</li>
-              <li>All analyses are automatically saved to your history for future reference</li>
+              <li>View results and charts below, or visit the <strong style={{ color: "#00f0ff" }}>Charts</strong> page for detailed visualizations</li>
             </ol>
           </div>
         </div>
@@ -583,6 +582,59 @@ export default function Analyze() {
                 </p>
               </div>
             )}
+
+            {/* Explanation Section - Appears after successful analysis */}
+            <div className="scifi-card fade-in" style={{
+              padding: "30px",
+              marginTop: "20px",
+              background: "rgba(139, 92, 246, 0.05)",
+              border: "2px solid rgba(139, 92, 246, 0.2)",
+              borderRadius: "8px"
+            }}>
+              <h2 style={{
+                fontSize: "22px",
+                fontWeight: 600,
+                marginBottom: "16px",
+                color: "#c4b5fd"
+              }}>
+                Understanding Your Results
+              </h2>
+              <div style={{
+                padding: "20px",
+                background: "rgba(15, 23, 42, 0.4)",
+                borderRadius: "8px",
+                marginBottom: "16px"
+              }}>
+                <p className="info-text" style={{
+                  fontSize: "15px",
+                  lineHeight: "1.8",
+                  marginBottom: "16px"
+                }}>
+                  This analysis summarizes gene expression patterns across your uploaded dataset. 
+                  The statistics and charts above highlight differences in expression levels between 
+                  conditions, helping you identify which genes are more or less active.
+                </p>
+                <p className="info-text" style={{
+                  fontSize: "15px",
+                  lineHeight: "1.8",
+                  marginBottom: "16px"
+                }}>
+                  <strong style={{ color: "#00f0ff" }}>Fold Change</strong> compares expression 
+                  between two conditions. Genes with fold change greater than 1 are upregulated 
+                  (more active in Condition B), while those below 1 are downregulated (less active). 
+                  Higher fold change values indicate stronger regulation and may point to biologically 
+                  significant changes.
+                </p>
+                <p className="info-text" style={{
+                  fontSize: "15px",
+                  lineHeight: "1.8"
+                }}>
+                  Visit the <strong style={{ color: "#00f0ff" }}>Charts</strong> page to explore 
+                  detailed visualizations of your data, including scatter plots and distribution 
+                  histograms that provide deeper insights into your gene expression patterns.
+                </p>
+              </div>
+            </div>
           </>
         )}
       </div>
