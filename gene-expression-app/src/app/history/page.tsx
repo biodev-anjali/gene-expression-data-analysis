@@ -2,20 +2,42 @@
 import { useEffect, useState } from "react"
 import BioBackground from "../components/BioBackground"
 import Link from "next/link"
+import { useAnalysis } from "@/contexts/AnalysisContext"
 
 export default function History() {
   const [runs, setRuns] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { latestAnalysis } = useAnalysis()
 
-  useEffect(() => {
+  // Fetch history from database
+  const fetchHistory = () => {
     fetch("/api/history")
       .then(r => r.json())
       .then(data => {
-        setRuns(data)
+        setRuns(Array.isArray(data) ? data : [])
         setLoading(false)
       })
       .catch(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchHistory()
   }, [])
+
+  // Auto-refresh when new analysis completes
+  useEffect(() => {
+    if (latestAnalysis && latestAnalysis.savedToDatabase) {
+      // Check if this analysis is already in runs
+      const exists = runs.find(r => r.id === latestAnalysis.id || r.fileHash === latestAnalysis.fileHash)
+      if (!exists) {
+        // Add to the beginning of the list
+        setRuns(prev => [latestAnalysis, ...prev])
+      } else {
+        // Refresh to get latest data
+        fetchHistory()
+      }
+    }
+  }, [latestAnalysis])
 
   return (
     <main style={{

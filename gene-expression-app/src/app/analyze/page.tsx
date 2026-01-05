@@ -1,113 +1,56 @@
 "use client"
 import { useState } from "react"
 import BioBackground from "../components/BioBackground"
+import { useAnalysis } from "@/contexts/AnalysisContext"
 
 export default function Analyze() {
   const [msg, setMsg] = useState("")
   const [res, setRes] = useState<any>(null)
   const [loading, setLoading] = useState(false)
-  const [geoUrl, setGeoUrl] = useState("")
-  const [geoLoading, setGeoLoading] = useState(false)
-  const [showGeoDownload, setShowGeoDownload] = useState(false)
   const [speciesName, setSpeciesName] = useState("")
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
-  const [showSpeciesSearch, setShowSpeciesSearch] = useState(false)
+  const [showSpeciesSearch, setShowSpeciesSearch] = useState(true) // Default to open
+  const { setLatestAnalysis } = useAnalysis()
 
-  async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  // Helper function to analyze a file with optional metadata
+  async function analyzeFile(file: File, metadata?: { species?: string, datasetSource?: string, datasetId?: string }) {
     setLoading(true)
     setMsg("")
-    setRes(null) // Clear previous results
-    const formData = new FormData(e.target as HTMLFormElement)
-    
+    setRes(null)
+
     try {
+      const formData = new FormData()
+      formData.append('file', file)
+      if (metadata?.species) formData.append('species', metadata.species)
+      if (metadata?.datasetSource) formData.append('datasetSource', metadata.datasetSource)
+      if (metadata?.datasetId) formData.append('datasetId', metadata.datasetId)
+
       const r = await fetch("/api/analyze", { method: "POST", body: formData })
       const d = await r.json()
-      
-      // Check for API errors first
+
       if (d.error) {
         setMsg(`Error: ${d.error}`)
         return
       }
-      
+
+      // Store in context for Charts and History pages
+      if (d.data) {
+        setLatestAnalysis(d.data)
+      }
+
       if (d.alreadyAnalyzed) {
-        setMsg("Already analyzed sample")
+        setMsg("✅ Dataset already analyzed. Showing previous results.")
         setRes(d.data)
       } else {
-        setMsg("Analysis completed")
-      setRes(d.data)
+        setMsg("✅ Analysis completed successfully!")
+        setRes(d.data)
       }
     } catch (error) {
       console.error("Analysis error:", error)
       setMsg("Error analyzing file. Please check the file format and try again.")
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function handleGeoDownload() {
-    if (!geoUrl.trim()) {
-      setMsg("Error: Please enter a valid NCBI GEO URL")
-      return
-    }
-
-    setGeoLoading(true)
-    setMsg("")
-    setRes(null)
-
-    try {
-      // Download and convert GEO file
-      const downloadResponse = await fetch("/api/geo-download", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: geoUrl.trim() })
-      })
-
-      const downloadData = await downloadResponse.json()
-
-      if (downloadData.error) {
-        setMsg(`Error: ${downloadData.error}`)
-        return
-      }
-
-      if (!downloadData.csvData) {
-        setMsg("Error: Failed to convert GEO file to CSV format")
-        return
-      }
-
-      // Create a File object from the CSV data
-      const csvBlob = new Blob([downloadData.csvData], { type: 'text/csv' })
-      const csvFile = new File([csvBlob], downloadData.fileName || 'geo_dataset.csv', { type: 'text/csv' })
-
-      // Create FormData and submit to analyzer
-      const formData = new FormData()
-      formData.append('file', csvFile)
-
-      const analyzeResponse = await fetch("/api/analyze", {
-        method: "POST",
-        body: formData
-      })
-
-      const analyzeData = await analyzeResponse.json()
-
-      if (analyzeData.error) {
-        setMsg(`Error: ${analyzeData.error}`)
-        return
-      }
-
-      if (analyzeData.alreadyAnalyzed) {
-        setMsg("Dataset already analyzed (from GEO download)")
-        setRes(analyzeData.data)
-      } else {
-        setMsg(`Analysis completed for GEO dataset: ${downloadData.metadata.seriesTitle || 'Unknown'}`)
-        setRes(analyzeData.data)
-      }
-    } catch (error) {
-      console.error("GEO download error:", error)
-      setMsg("Error downloading or analyzing GEO file. Please check the URL and try again.")
-    } finally {
-      setGeoLoading(false)
     }
   }
 
@@ -151,8 +94,8 @@ export default function Analyze() {
   }
 
   async function handleDatasetDownload(dataset: any) {
-    setGeoLoading(true)
-    setMsg("")
+    setLoading(true)
+    setMsg("Downloading dataset...")
     setRes(null)
 
     try {
@@ -167,46 +110,33 @@ export default function Analyze() {
 
       if (downloadData.error) {
         setMsg(`Error: ${downloadData.error}`)
+        setLoading(false)
         return
       }
 
       if (!downloadData.csvData) {
         setMsg("Error: Failed to convert GEO file to CSV format")
+        setLoading(false)
         return
       }
 
-      // Create a File object from the CSV data
+      // Create a File object from the CSV data and trigger download
       const csvBlob = new Blob([downloadData.csvData], { type: 'text/csv' })
-      const csvFile = new File([csvBlob], downloadData.fileName || `${dataset.gseId}.csv`, { type: 'text/csv' })
+      const url = window.URL.createObjectURL(csvBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = downloadData.fileName || `${dataset.gseId}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
 
-      // Create FormData and submit to analyzer
-      const formData = new FormData()
-      formData.append('file', csvFile)
-
-      const analyzeResponse = await fetch("/api/analyze", {
-        method: "POST",
-        body: formData
-      })
-
-      const analyzeData = await analyzeResponse.json()
-
-      if (analyzeData.error) {
-        setMsg(`Error: ${analyzeData.error}`)
-        return
-      }
-
-      if (analyzeData.alreadyAnalyzed) {
-        setMsg(`Dataset ${dataset.gseId} already analyzed`)
-        setRes(analyzeData.data)
-      } else {
-        setMsg(`Analysis completed for ${dataset.gseId}: ${dataset.title}`)
-        setRes(analyzeData.data)
-      }
+      setMsg(`✅ Dataset ${dataset.gseId} downloaded successfully. You can now upload it using the form below.`)
+      setLoading(false)
     } catch (error) {
       console.error("Dataset download error:", error)
-      setMsg("Error downloading or analyzing dataset. Please try again.")
-    } finally {
-      setGeoLoading(false)
+      setMsg("Error downloading dataset. Please try again.")
+      setLoading(false)
     }
   }
 
@@ -241,61 +171,45 @@ export default function Analyze() {
             fontSize: "16px",
             lineHeight: "1.8"
           }}>
-            Upload your gene expression data file or download directly from NCBI GEO to perform 
-            automated analysis and compute comprehensive summary statistics including gene count, 
-            sample count, and mean expression values.
+            Upload your gene expression data file or search for datasets by species name. 
+            After downloading a dataset, you can analyze it using the manual upload form below.
           </p>
 
-          {/* Species Search Section */}
+          {/* Species Search Section - Primary Workflow */}
           <div style={{
             padding: "24px",
-            backgroundColor: "rgba(139, 92, 246, 0.1)",
-            border: "2px solid rgba(139, 92, 246, 0.3)",
+            backgroundColor: "rgba(139, 92, 246, 0.15)",
+            border: "2px solid rgba(139, 92, 246, 0.5)",
             borderRadius: "8px",
-            marginBottom: "24px"
+            marginBottom: "24px",
+            boxShadow: "0 0 20px rgba(139, 92, 246, 0.3)"
           }}>
             <div style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "16px",
-              cursor: "pointer"
-            }}
-            onClick={() => setShowSpeciesSearch(!showSpeciesSearch)}
-            >
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px"
-              }}>
-                <span style={{
-                  fontSize: "18px",
-                  fontWeight: 700,
-                  color: "#c4b5fd"
-                }}>
-                  Search by Species Name
-                </span>
-                <span style={{
-                  fontSize: "12px",
-                  color: "#94a3b8",
-                  padding: "4px 8px",
-                  background: "rgba(139, 92, 246, 0.2)",
-                  borderRadius: "4px"
-                }}>
-                  Auto-Download
-                </span>
-              </div>
+              gap: "12px",
+              marginBottom: "20px"
+            }}>
               <span style={{
                 fontSize: "20px",
-                color: "#c4b5fd",
-                transform: showSpeciesSearch ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.3s ease"
+                fontWeight: 700,
+                color: "#c4b5fd"
               }}>
-                ▼
+                🔬 Species-Based Data Discovery
+              </span>
+              <span style={{
+                fontSize: "12px",
+                color: "#94a3b8",
+                padding: "4px 8px",
+                background: "rgba(139, 92, 246, 0.2)",
+                borderRadius: "4px"
+              }}>
+                Download Only
               </span>
             </div>
 
-            {showSpeciesSearch && (
+            {/* Always show species search - it's the primary workflow */}
+            {(
               <div style={{ marginTop: "20px" }}>
                 <p className="info-text" style={{
                   fontSize: "14px",
@@ -304,7 +218,7 @@ export default function Analyze() {
                 }}>
                   Enter a species name (e.g., "Homo sapiens", "Mus musculus", "human", "mouse") 
                   to search NCBI GEO for available gene expression datasets. Select a dataset 
-                  to automatically download and analyze it.
+                  to download it as CSV. You can then upload and analyze it using the form below.
                 </p>
 
                 <div style={{ marginBottom: "16px" }}>
@@ -417,14 +331,14 @@ export default function Analyze() {
                               type="button"
                               onClick={() => handleDatasetDownload(dataset)}
                               className="scifi-button"
-                              disabled={geoLoading}
+                              disabled={loading}
                               style={{
                                 padding: "8px 16px",
                                 fontSize: "13px",
                                 whiteSpace: "nowrap"
                               }}
                             >
-                              {geoLoading ? "Processing..." : "Download & Analyze"}
+                              {loading ? "Downloading..." : "Download CSV"}
                             </button>
                           </div>
                         </div>
@@ -449,115 +363,6 @@ export default function Analyze() {
                     <li>Common names: "human", "mouse", "fruit fly", "yeast"</li>
                     <li>Other: "Arabidopsis thaliana", "Escherichia coli"</li>
                   </ul>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* NCBI GEO Download Section */}
-          <div style={{
-            padding: "24px",
-            backgroundColor: "rgba(0, 240, 255, 0.1)",
-            border: "2px solid rgba(0, 240, 255, 0.3)",
-            borderRadius: "8px",
-            marginBottom: "24px"
-          }}>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "16px",
-              cursor: "pointer"
-            }}
-            onClick={() => setShowGeoDownload(!showGeoDownload)}
-            >
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px"
-              }}>
-                <span style={{
-                  fontSize: "18px",
-                  fontWeight: 700,
-                  color: "#00f0ff"
-                }}>
-                  Download from NCBI GEO (Direct URL)
-                </span>
-              </div>
-              <span style={{
-                fontSize: "20px",
-                color: "#00f0ff",
-                transform: showGeoDownload ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.3s ease"
-              }}>
-                ▼
-              </span>
-            </div>
-
-            {showGeoDownload && (
-              <div style={{ marginTop: "20px" }}>
-                <p className="info-text" style={{
-                  fontSize: "14px",
-                  lineHeight: "1.8",
-                  marginBottom: "16px"
-                }}>
-                  Paste a direct download URL from NCBI GEO (Series Matrix File format). 
-                  The system will automatically download, convert, and analyze the dataset.
-                </p>
-
-                <div style={{ marginBottom: "16px" }}>
-                  <input
-                    type="text"
-                    value={geoUrl}
-                    onChange={(e) => setGeoUrl(e.target.value)}
-                    placeholder="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345&targ=gsm&form=text&view=full"
-                    className="scifi-input"
-                    style={{
-                      width: "100%",
-                      marginBottom: "12px"
-                    }}
-                    disabled={geoLoading}
-                  />
-                  <p style={{
-                    fontSize: "12px",
-                    color: "#94a3b8",
-                    marginBottom: "12px"
-                  }}>
-                    Example: Series Matrix File URL from NCBI GEO dataset page
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleGeoDownload}
-                  className="scifi-button"
-                  disabled={geoLoading || !geoUrl.trim()}
-                  style={{
-                    width: "100%"
-                  }}
-                >
-                  {geoLoading ? "Downloading & Processing..." : "Download & Analyze from GEO"}
-                </button>
-
-                <div style={{
-                  marginTop: "16px",
-                  padding: "12px",
-                  background: "rgba(15, 23, 42, 0.6)",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  color: "#94a3b8"
-                }}>
-                  <p style={{ marginBottom: "8px", fontWeight: 600, color: "#00f0ff" }}>
-                    How to get GEO download URL:
-                  </p>
-                  <ol style={{ paddingLeft: "20px", lineHeight: "1.8" }}>
-                    <li>Visit <a href="https://www.ncbi.nlm.nih.gov/geo/" target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa" }}>NCBI GEO</a></li>
-                    <li>Search for a dataset (e.g., GSE12345)</li>
-                    <li>Click on the dataset page</li>
-                    <li>Find "Series Matrix File(s)" section</li>
-                    <li>Right-click "Download" and copy the link address</li>
-                    <li>Paste the URL above</li>
-                  </ol>
                 </div>
               </div>
             )}
@@ -633,8 +438,8 @@ export default function Analyze() {
                 marginBottom: "12px"
               }}>
                 Required CSV Structure:
-            </p>
-            <ul className="info-text" style={{
+              </p>
+              <ul className="info-text" style={{
                 fontSize: "14px",
                 paddingLeft: "24px",
                 lineHeight: "2",
@@ -656,7 +461,14 @@ export default function Analyze() {
             </p>
           </div>
 
-          <form onSubmit={submit} style={{ marginTop: "30px" }}>
+          <form onSubmit={(e) => {
+            e.preventDefault()
+            const formData = new FormData(e.target as HTMLFormElement)
+            const file = formData.get("file") as File
+            if (file) {
+              analyzeFile(file)
+            }
+          }} style={{ marginTop: "30px" }}>
             <div style={{ marginBottom: "20px" }}>
               <input 
                 type="file" 
@@ -674,6 +486,7 @@ export default function Analyze() {
               {loading ? "Processing..." : "Analyze"}
             </button>
           </form>
+
         </div>
 
         {msg && (

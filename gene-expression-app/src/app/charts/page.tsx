@@ -2,12 +2,29 @@
 import { useEffect, useState } from "react"
 import ExpressionChart from "@/components/ExpressionChart"
 import BioBackground from "../components/BioBackground"
+import { useAnalysis } from "@/contexts/AnalysisContext"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  ScatterChart,
+  Scatter,
+  LineChart,
+  Line,
+  Legend,
+} from "recharts"
 
 export default function Charts() {
   const [runs, setRuns] = useState<any[]>([])
   const [selected, setSelected] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { latestAnalysis } = useAnalysis()
 
+  // Fetch history and merge with latest analysis
   useEffect(() => {
     fetch("/api/history")
       .then(r => r.json())
@@ -17,6 +34,17 @@ export default function Charts() {
       })
       .catch(() => setLoading(false))
   }, [])
+
+  // Update runs when new analysis completes
+  useEffect(() => {
+    if (latestAnalysis && latestAnalysis.savedToDatabase) {
+      // Check if this analysis is already in runs
+      const exists = runs.find(r => r.id === latestAnalysis.id || r.fileHash === latestAnalysis.fileHash)
+      if (!exists) {
+        setRuns(prev => [latestAnalysis, ...prev])
+      }
+    }
+  }, [latestAnalysis])
 
   return (
     <main style={{
@@ -299,6 +327,217 @@ export default function Charts() {
                 }))} 
               />
             </div>
+
+            {/* Fold Change Analysis Chart */}
+            {selected.some(r => r.foldChangeData || r.chartData?.foldChangeData?.length > 0) && (
+              <div style={{
+                marginTop: "30px",
+                padding: "20px",
+                background: "rgba(139, 92, 246, 0.05)",
+                borderRadius: "8px",
+                border: "1px solid rgba(139, 92, 246, 0.2)"
+              }}>
+                <h3 style={{
+                  fontSize: "20px",
+                  fontWeight: 600,
+                  color: "#c4b5fd",
+                  marginBottom: "16px"
+                }}>
+                  Fold Change Analysis
+                </h3>
+                <p className="info-text" style={{
+                  fontSize: "14px",
+                  marginBottom: "20px",
+                  lineHeight: "1.6"
+                }}>
+                  Fold change values comparing Condition B vs Condition A. Points above y=x line 
+                  indicate upregulated genes (fold change &gt; 1), points below indicate downregulated genes.
+                </p>
+                <div style={{ width: "100%", height: "400px", marginTop: "20px" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 20, right: 30, bottom: 60, left: 60 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 240, 255, 0.15)" />
+                      <XAxis 
+                        type="number" 
+                        dataKey="conditionA" 
+                        name="Condition A"
+                        label={{ value: "Condition A Expression", position: "insideBottom", offset: -10, style: { fill: "#94a3b8" } }}
+                        stroke="#60a5fa"
+                        tick={{ fill: "#94a3b8" }}
+                      />
+                      <YAxis 
+                        type="number" 
+                        dataKey="conditionB" 
+                        name="Condition B"
+                        label={{ value: "Condition B Expression", angle: -90, position: "insideLeft", style: { fill: "#94a3b8" } }}
+                        stroke="#60a5fa"
+                        tick={{ fill: "#94a3b8" }}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: "rgba(15, 23, 42, 0.98)",
+                          border: "1px solid rgba(0, 240, 255, 0.4)",
+                          borderRadius: "4px",
+                          color: "#e0f2fe"
+                        }}
+                        cursor={{ strokeDasharray: "3 3" }}
+                      />
+                      <Scatter 
+                        name="Genes" 
+                        data={(() => {
+                          const firstWithFoldChange = selected.find(r => r.foldChangeData || r.chartData?.foldChangeData?.length > 0)
+                          if (!firstWithFoldChange) return []
+                          try {
+                            const foldData = firstWithFoldChange.chartData?.foldChangeData || 
+                                            JSON.parse(firstWithFoldChange.foldChangeData || '[]')
+                            return foldData.slice(0, 100).map((fc: any) => ({
+                              conditionA: fc.conditionA,
+                              conditionB: fc.conditionB,
+                              foldChange: fc.foldChange,
+                              gene: fc.gene,
+                              classification: fc.classification
+                            }))
+                          } catch {
+                            return []
+                          }
+                        })()}
+                        fill="#00f0ff"
+                      />
+                      {/* Reference line y=x */}
+                      <Line 
+                        type="linear" 
+                        dataKey="ref" 
+                        stroke="#8b5cf6" 
+                        strokeDasharray="5 5"
+                        dot={false}
+                        data={[{ conditionA: 0, conditionB: 0 }, { conditionA: 100, conditionB: 100 }]}
+                      />
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Expression Distribution Chart */}
+            {selected.some(r => r.chartData?.distributionData?.length > 0) && (
+              <div style={{
+                marginTop: "30px",
+                padding: "20px",
+                background: "rgba(0, 240, 255, 0.05)",
+                borderRadius: "8px",
+                border: "1px solid rgba(0, 240, 255, 0.2)"
+              }}>
+                <h3 style={{
+                  fontSize: "20px",
+                  fontWeight: 600,
+                  color: "#00f0ff",
+                  marginBottom: "16px"
+                }}>
+                  Expression Distribution
+                </h3>
+                <p className="info-text" style={{
+                  fontSize: "14px",
+                  marginBottom: "20px",
+                  lineHeight: "1.6"
+                }}>
+                  Histogram showing the distribution of expression values across all genes and samples.
+                </p>
+                <div style={{ width: "100%", height: "350px", marginTop: "20px" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={(() => {
+                      const firstWithDist = selected.find(r => r.chartData?.distributionData?.length > 0)
+                      if (!firstWithDist) return []
+                      return firstWithDist.chartData.distributionData.map((bin: any) => ({
+                        range: bin.range,
+                        count: bin.count,
+                        midpoint: bin.midpoint
+                      }))
+                    })()}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 240, 255, 0.15)" />
+                      <XAxis 
+                        dataKey="range" 
+                        angle={-45}
+                        textAnchor="end"
+                        height={100}
+                        stroke="#60a5fa"
+                        tick={{ fill: "#94a3b8", fontSize: "10px" }}
+                        label={{ value: "Expression Range", position: "insideBottom", offset: -5, style: { fill: "#94a3b8" } }}
+                      />
+                      <YAxis 
+                        stroke="#60a5fa"
+                        tick={{ fill: "#94a3b8" }}
+                        label={{ value: "Gene Count", angle: -90, position: "insideLeft", style: { fill: "#94a3b8" } }}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: "rgba(15, 23, 42, 0.98)",
+                          border: "1px solid rgba(0, 240, 255, 0.4)",
+                          borderRadius: "4px",
+                          color: "#e0f2fe"
+                        }}
+                      />
+                      <Bar 
+                        dataKey="count" 
+                        fill="url(#distributionGradient)"
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <defs>
+                        <linearGradient id="distributionGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#00f0ff" stopOpacity={0.8} />
+                          <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.6} />
+                        </linearGradient>
+                      </defs>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Show latest analysis if available and not in selected */}
+        {latestAnalysis && !selected.find(s => s.id === latestAnalysis.id || s.fileHash === latestAnalysis.fileHash) && (
+          <div className="scifi-card fade-in" style={{ 
+            padding: "30px", 
+            marginTop: "30px",
+            border: "2px solid rgba(34, 197, 94, 0.4)",
+            background: "rgba(34, 197, 94, 0.1)"
+          }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "20px"
+            }}>
+              <span style={{ fontSize: "20px" }}>✨</span>
+              <h2 style={{
+                fontSize: "20px",
+                fontWeight: 600,
+                color: "#86efac"
+              }}>
+                Latest Analysis
+              </h2>
+            </div>
+            <p className="info-text" style={{ marginBottom: "16px" }}>
+              {latestAnalysis.fileName || "Recent Analysis"} - {latestAnalysis.genes} genes, {latestAnalysis.samples} samples
+            </p>
+            <button
+              onClick={() => {
+                const analysisInRuns = runs.find(r => r.id === latestAnalysis.id || r.fileHash === latestAnalysis.fileHash)
+                if (analysisInRuns) {
+                  setSelected([analysisInRuns])
+                } else {
+                  setSelected([latestAnalysis])
+                }
+              }}
+              className="scifi-button"
+              style={{
+                padding: "8px 16px",
+                fontSize: "14px"
+              }}
+            >
+              View Charts for This Analysis
+            </button>
           </div>
         )}
       </div>

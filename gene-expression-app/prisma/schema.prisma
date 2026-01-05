@@ -11,14 +11,18 @@ generator client {
 }
 
 model GeneExpressionRun {
-  id                String   @id @default(uuid())
-  fileName          String?
-  fileHash          String   @unique
-  genes             Int
-  samples           Int
-  meanExpr          Float?
-  upregulatedGenes  Int?
+  id                 String   @id @default(uuid())
+  fileName           String?
+  fileHash           String   @unique
+  genes              Int
+  samples            Int
+  meanExpr           Float?
+  upregulatedGenes   Int?
   downregulatedGenes Int?
-  foldChangeData    String?  // JSON string storing fold change analysis
-  createdAt         DateTime @default(now())
+  foldChangeData     String? // JSON string storing fold change analysis
+  // New fields for species-based discovery and chart visualization
+  species            String? // Species name (e.g., "Homo sapiens", "Mus musculus")
+  datasetSource      String? // Dataset source (e.g., "GSE12345", "NCBI GEO", "User Upload")
+  datasetId          String? // Dataset identifier (e.g., GSE ID from GEO)
+  createdAt          DateTime @default(now())
 }

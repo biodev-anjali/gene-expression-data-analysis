@@ -7,6 +7,10 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData()
     const file = formData.get("file") as File
+    // Optional metadata for species-based discovery
+    const species = formData.get("species") as string | null
+    const datasetSource = formData.get("datasetSource") as string | null
+    const datasetId = formData.get("datasetId") as string | null
 
     if (!file) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 })
@@ -142,7 +146,44 @@ export async function POST(req: Request) {
     }
   }
 
+  // Calculate expression distribution for chart visualization
+  // This creates bins for histogram/distribution charts
+  const expressionValues: number[] = []
+  validRows.forEach(row => {
+    if (!row) return
+    Object.values(row).forEach((v: any, idx) => {
+      if (idx === 0) return // Skip gene name column
+      const n = Number(v)
+      if (!isNaN(n) && isFinite(n)) {
+        expressionValues.push(n)
+      }
+    })
+  })
+
+  // Create distribution bins for chart visualization
+  const distributionData = (() => {
+    if (expressionValues.length === 0) return []
+    const min = Math.min(...expressionValues)
+    const max = Math.max(...expressionValues)
+    const binCount = 20
+    const binSize = (max - min) / binCount
+    const bins = Array(binCount).fill(0).map((_, i) => ({
+      bin: i,
+      range: `${(min + i * binSize).toFixed(2)}-${(min + (i + 1) * binSize).toFixed(2)}`,
+      count: 0,
+      midpoint: min + (i + 0.5) * binSize
+    }))
+    
+    expressionValues.forEach(val => {
+      const binIndex = Math.min(Math.floor((val - min) / binSize), binCount - 1)
+      bins[binIndex].count++
+    })
+    
+    return bins
+  })()
+
     // Prepare analysis result object (used whether saved to DB or not)
+    // Includes chart-ready data for immediate visualization
     const analysisResult = {
       id: crypto.randomUUID(), // Generate ID even if not saving to DB
       fileName: file.name,
@@ -153,6 +194,15 @@ export async function POST(req: Request) {
       upregulatedGenes,
       downregulatedGenes,
       foldChangeData,
+      species: species || null,
+      datasetSource: datasetSource || null,
+      datasetId: datasetId || null,
+      // Chart-ready data for immediate visualization
+      chartData: {
+        foldChangeData: foldChangeData ? JSON.parse(foldChangeData) : [],
+        distributionData: distributionData,
+        expressionValues: expressionValues.slice(0, 1000), // Limit for performance
+      },
       createdAt: new Date(),
       // Flag to indicate if this was saved to database
       savedToDatabase: false,
@@ -173,13 +223,22 @@ export async function POST(req: Request) {
             upregulatedGenes,
             downregulatedGenes,
             foldChangeData,
+            species: species || null,
+            datasetSource: datasetSource || null,
+            datasetId: datasetId || null,
           },
         })
         
-        // Successfully saved - return with database ID
+        // Add chart-ready data to saved result
+        const savedWithCharts = {
+          ...saved,
+          chartData: analysisResult.chartData,
+        }
+        
+        // Successfully saved - return with database ID and chart data
         return NextResponse.json({ 
           alreadyAnalyzed: false, 
-          data: saved,
+          data: savedWithCharts,
           savedToDatabase: true,
         })
       } catch (dbError: any) {
@@ -193,9 +252,18 @@ export async function POST(req: Request) {
               where: { fileHash },
             })
             if (existingRun) {
+              // Add chart-ready data to existing result
+              const existingWithCharts = {
+                ...existingRun,
+                chartData: {
+                  foldChangeData: existingRun.foldChangeData ? JSON.parse(existingRun.foldChangeData) : [],
+                  distributionData: [], // Will be calculated if needed
+                  expressionValues: [],
+                },
+              }
               return NextResponse.json({ 
                 alreadyAnalyzed: true, 
-                data: existingRun,
+                data: existingWithCharts,
                 savedToDatabase: true,
               })
             }
