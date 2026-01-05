@@ -15,23 +15,23 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const fileHash = crypto.createHash("sha256").update(buffer).digest("hex")
 
-    // Check for existing analysis with proper error handling
-    let existing
+    // Check for existing analysis with graceful error handling
+    // If database is unavailable, we'll still perform the analysis but won't save it
+    let existing = null
+    let dbAvailable = true
     try {
       existing = await prisma.geneExpressionRun.findUnique({
         where: { fileHash },
       })
     } catch (dbError: any) {
-      console.error("Database query error:", dbError)
-      return NextResponse.json(
-        { 
-          error: "Database connection failed. Please check your database configuration.",
-          details: process.env.NODE_ENV === "development" ? dbError.message : undefined
-        },
-        { status: 500 }
-      )
+      // Database connection failed - log but continue with analysis
+      // This ensures the app remains functional even if database is temporarily unavailable
+      console.error("Database connection error (continuing without DB):", dbError.message)
+      dbAvailable = false
+      // Don't return error - allow analysis to proceed without database
     }
 
+    // If we found existing analysis, return it (only if DB was available)
     if (existing) {
       return NextResponse.json({ alreadyAnalyzed: true, data: existing })
     }
@@ -142,43 +142,87 @@ export async function POST(req: Request) {
     }
   }
 
-    // Save analysis results with proper error handling
-    let saved
-    try {
-      saved = await prisma.geneExpressionRun.create({
-        data: {
-          fileName: file.name,
-          fileHash,
-          genes,
-          samples,
-          meanExpr,
-          upregulatedGenes,
-          downregulatedGenes,
-          foldChangeData,
-        },
-      })
-    } catch (dbError: any) {
-      console.error("Database save error:", dbError)
-      // Handle unique constraint violations (duplicate fileHash)
-      if (dbError.code === "P2002") {
-        // Race condition: file was analyzed between check and save
-        const existingRun = await prisma.geneExpressionRun.findUnique({
-          where: { fileHash },
-        })
-        if (existingRun) {
-          return NextResponse.json({ alreadyAnalyzed: true, data: existingRun })
-        }
-      }
-      return NextResponse.json(
-        { 
-          error: "Failed to save analysis results. Please try again.",
-          details: process.env.NODE_ENV === "development" ? dbError.message : undefined
-        },
-        { status: 500 }
-      )
+    // Prepare analysis result object (used whether saved to DB or not)
+    const analysisResult = {
+      id: crypto.randomUUID(), // Generate ID even if not saving to DB
+      fileName: file.name,
+      fileHash,
+      genes,
+      samples,
+      meanExpr,
+      upregulatedGenes,
+      downregulatedGenes,
+      foldChangeData,
+      createdAt: new Date(),
+      // Flag to indicate if this was saved to database
+      savedToDatabase: false,
     }
 
-    return NextResponse.json({ alreadyAnalyzed: false, data: saved })
+    // Save analysis results to database (if available)
+    // If database save fails, we still return the analysis results
+    // This ensures the app remains functional even if database is temporarily unavailable
+    if (dbAvailable) {
+      try {
+        const saved = await prisma.geneExpressionRun.create({
+          data: {
+            fileName: file.name,
+            fileHash,
+            genes,
+            samples,
+            meanExpr,
+            upregulatedGenes,
+            downregulatedGenes,
+            foldChangeData,
+          },
+        })
+        
+        // Successfully saved - return with database ID
+        return NextResponse.json({ 
+          alreadyAnalyzed: false, 
+          data: saved,
+          savedToDatabase: true,
+        })
+      } catch (dbError: any) {
+        console.error("Database save error (returning analysis anyway):", dbError.message)
+        
+        // Handle unique constraint violations (duplicate fileHash - race condition)
+        if (dbError.code === "P2002") {
+          try {
+            // Race condition: file was analyzed between check and save
+            const existingRun = await prisma.geneExpressionRun.findUnique({
+              where: { fileHash },
+            })
+            if (existingRun) {
+              return NextResponse.json({ 
+                alreadyAnalyzed: true, 
+                data: existingRun,
+                savedToDatabase: true,
+              })
+            }
+          } catch (retryError: any) {
+            console.error("Error fetching existing run:", retryError.message)
+            // Fall through to return analysis without DB save
+          }
+        }
+        
+        // Database save failed, but return analysis results anyway
+        // This ensures users can still see their analysis even if DB is down
+        return NextResponse.json({ 
+          alreadyAnalyzed: false, 
+          data: analysisResult,
+          savedToDatabase: false,
+          warning: "Analysis completed but could not be saved to database. Results are temporary.",
+        })
+      }
+    } else {
+      // Database was unavailable from the start - return analysis without saving
+      return NextResponse.json({ 
+        alreadyAnalyzed: false, 
+        data: analysisResult,
+        savedToDatabase: false,
+        warning: "Database unavailable. Analysis completed but results are temporary.",
+      })
+    }
     
   } catch (error: any) {
     console.error("Analysis API error:", error)

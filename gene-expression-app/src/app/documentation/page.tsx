@@ -1094,7 +1094,7 @@ GENE003,25.4,22.8,24.1`}
               Cryptographic hashing is performed using industry-standard algorithms (SHA-256), 
               ensuring reliable duplicate detection. Database operations use an ORM (Object-Relational 
               Mapping) framework that provides type safety, query optimization, and database 
-              abstraction, supporting both SQLite for development and PostgreSQL for production.
+              abstraction, using PostgreSQL for both development and production (optimized for Vercel serverless deployment).
             </p>
           </div>
 
