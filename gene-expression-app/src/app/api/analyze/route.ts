@@ -207,10 +207,26 @@ export async function POST(req: Request) {
       savedToDatabase: false,
     }
 
-    // CRITICAL: ALWAYS attempt to save history record after successful analysis
-    // This ensures every analysis is persisted, even if initial DB check failed
-    // Execution order: Analysis → Prepare metadata → Save to DB → Return response
+    // ============================================================================
+    // CRITICAL: SAVE TO DATABASE BEFORE RETURNING RESPONSE
+    // ============================================================================
+    // Execution order MUST be:
+    //   1. Analysis done ✓
+    //   2. Prepare metadata ✓
+    //   3. SAVE TO DATABASE (await prisma.create) ← MUST HAPPEN HERE
+    //   4. THEN return response ← NEVER return before save completes
+    //
+    // WRONG PATTERN (DO NOT DO THIS):
+    //   return NextResponse.json({ result, charts });  // ❌ Function ends here
+    //   await prisma.geneExpressionRun.create({...});  // ❌ Never executes!
+    //
+    // CORRECT PATTERN (CURRENT CODE):
+    //   const saved = await prisma.geneExpressionRun.create({...});  // ✓ Save first
+    //   return NextResponse.json({ data: saved });  // ✓ Then return
+    // ============================================================================
+    
     try {
+      // STEP 3: SAVE TO DATABASE (MUST complete before any return statement)
       const saved = await prisma.geneExpressionRun.create({
         data: {
           fileName: file.name,
@@ -239,7 +255,7 @@ export async function POST(req: Request) {
         savedToDatabase: true, // Explicitly mark as saved
       }
       
-      // Successfully saved - return with database ID and chart data
+      // STEP 4: NOW we can safely return the response (save is complete)
       return NextResponse.json({ 
         alreadyAnalyzed: false, 
         data: savedWithCharts,
