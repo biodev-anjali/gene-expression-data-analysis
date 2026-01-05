@@ -7,7 +7,6 @@ export default function Navbar() {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/geo-downloader", label: "GEO Downloader" },
     { href: "/analyze", label: "Analyzer" },
     { href: "/charts", label: "Charts" },
     { href: "/history", label: "History" },

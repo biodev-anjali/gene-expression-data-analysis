@@ -6,13 +6,11 @@ import { useAnalysis } from "@/contexts/AnalysisContext"
 /**
  * Analyzer Page
  * 
- * PURPOSE: This page handles ONLY CSV file upload and automatic analysis.
- * Dataset downloading is handled separately in the GEO Downloader page.
+ * PURPOSE: This page handles CSV file upload and automatic analysis.
  * 
- * SEPARATION OF CONCERNS:
- * - Analysis logic is isolated from download logic
- * - This ensures clean, maintainable code
+ * WORKFLOW:
  * - Users upload CSV files and analysis runs automatically
+ * - Analysis results are saved to database and displayed immediately
  */
 export default function Analyze() {
   const [msg, setMsg] = useState("")
@@ -110,8 +108,7 @@ export default function Analyze() {
             lineHeight: "1.8"
           }}>
             Upload a CSV file containing gene expression data. Analysis will start automatically 
-            when you select a file. To download datasets from NCBI GEO, use the 
-            <strong style={{ color: "#00f0ff" }}> GEO Downloader</strong> page.
+            when you select a file. Results are saved to your analysis history for future reference.
           </p>
 
           {/* File Upload Section */}
@@ -233,7 +230,7 @@ export default function Analyze() {
               <li>Click "Choose File" and select a CSV file with gene expression data</li>
               <li>Analysis will start automatically - no need to click any button</li>
               <li>View results below, or check the <strong style={{ color: "#00f0ff" }}>Charts</strong> and <strong style={{ color: "#00f0ff" }}>History</strong> pages</li>
-              <li>To download datasets from NCBI GEO, visit the <strong style={{ color: "#00f0ff" }}>GEO Downloader</strong> page</li>
+              <li>All analyses are automatically saved to your history for future reference</li>
             </ol>
           </div>
         </div>

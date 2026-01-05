@@ -20,24 +20,23 @@ export async function POST(req: Request) {
     const fileHash = crypto.createHash("sha256").update(buffer).digest("hex")
 
     // Check for existing analysis with graceful error handling
-    // If database is unavailable, we'll still perform the analysis but won't save it
+    // We still attempt to save even if initial check fails (DB might recover)
     let existing = null
-    let dbAvailable = true
     try {
       existing = await prisma.geneExpressionRun.findUnique({
         where: { fileHash },
       })
+      
+      // If we found existing analysis, return it immediately
+      if (existing) {
+        console.log(`✅ Found existing analysis: ${existing.id} (${existing.fileName})`)
+        return NextResponse.json({ alreadyAnalyzed: true, data: existing })
+      }
     } catch (dbError: any) {
-      // Database connection failed - log but continue with analysis
-      // This ensures the app remains functional even if database is temporarily unavailable
-      console.error("Database connection error (continuing without DB):", dbError.message)
-      dbAvailable = false
-      // Don't return error - allow analysis to proceed without database
-    }
-
-    // If we found existing analysis, return it (only if DB was available)
-    if (existing) {
-      return NextResponse.json({ alreadyAnalyzed: true, data: existing })
+      // Database connection failed during check - log but continue with analysis
+      // We'll still attempt to save after analysis completes (DB might recover)
+      console.warn("⚠️ Database check failed (will retry after analysis):", dbError.message)
+      // Don't return error - allow analysis to proceed
     }
 
     const csvText = buffer.toString("utf-8")
@@ -208,101 +207,99 @@ export async function POST(req: Request) {
       savedToDatabase: false,
     }
 
-    // Save analysis results to database (if available)
-    // If database save fails, we still return the analysis results
-    // This ensures the app remains functional even if database is temporarily unavailable
-    if (dbAvailable) {
-      try {
-        const saved = await prisma.geneExpressionRun.create({
-          data: {
-            fileName: file.name,
-            fileHash,
-            genes,
-            samples,
-            meanExpr,
-            upregulatedGenes,
-            downregulatedGenes,
-            foldChangeData,
-            species: species || null,
-            datasetSource: datasetSource || null,
-            datasetId: datasetId || null,
-          },
-        })
-        
-        // Log successful save for debugging
-        console.log(`✅ Analysis saved to database: ${saved.id} (${saved.fileName})`)
-        
-        // Add chart-ready data to saved result
-        const savedWithCharts = {
-          ...saved,
-          chartData: analysisResult.chartData,
-          savedToDatabase: true, // Explicitly mark as saved
-        }
-        
-        // Successfully saved - return with database ID and chart data
-        return NextResponse.json({ 
-          alreadyAnalyzed: false, 
-          data: savedWithCharts,
-          savedToDatabase: true,
-        })
-      } catch (dbError: any) {
-        console.error("❌ Database save error (returning analysis anyway):", {
-          message: dbError.message,
-          code: dbError.code,
-          meta: dbError.meta
-        })
-        
-        // Handle unique constraint violations (duplicate fileHash - race condition)
-        if (dbError.code === "P2002") {
-          try {
-            // Race condition: file was analyzed between check and save
-            const existingRun = await prisma.geneExpressionRun.findUnique({
-              where: { fileHash },
-            })
-            if (existingRun) {
-              console.log(`✅ Found existing analysis (race condition): ${existingRun.id}`)
-              // Add chart-ready data to existing result
-              const existingWithCharts = {
-                ...existingRun,
-                chartData: {
-                  foldChangeData: existingRun.foldChangeData ? JSON.parse(existingRun.foldChangeData) : [],
-                  distributionData: [], // Will be calculated if needed
-                  expressionValues: [],
-                },
-                savedToDatabase: true,
-              }
-              return NextResponse.json({ 
-                alreadyAnalyzed: true, 
-                data: existingWithCharts,
-                savedToDatabase: true,
-              })
-            }
-          } catch (retryError: any) {
-            console.error("❌ Error fetching existing run:", retryError.message)
-            // Fall through to return analysis without DB save
-          }
-        }
-        
-        // Database save failed, but return analysis results anyway
-        // This ensures users can still see their analysis even if DB is down
-        console.warn("⚠️ Analysis completed but NOT saved to database. Results are temporary.")
-        return NextResponse.json({ 
-          alreadyAnalyzed: false, 
-          data: {
-            ...analysisResult,
-            savedToDatabase: false,
-          },
-          savedToDatabase: false,
-          warning: "Analysis completed but could not be saved to database. Results are temporary.",
-        })
+    // CRITICAL: ALWAYS attempt to save history record after successful analysis
+    // This ensures every analysis is persisted, even if initial DB check failed
+    // Execution order: Analysis → Prepare metadata → Save to DB → Return response
+    try {
+      const saved = await prisma.geneExpressionRun.create({
+        data: {
+          fileName: file.name,
+          fileHash,
+          genes,
+          samples,
+          meanExpr,
+          upregulatedGenes,
+          downregulatedGenes,
+          foldChangeData,
+          species: species || null,
+          datasetSource: datasetSource || null,
+          datasetId: datasetId || null,
+        },
+      })
+      
+      // Log successful save for debugging
+      console.log(`✅ Analysis saved to database: ${saved.id} (${saved.fileName})`)
+      console.log(`   - Genes: ${saved.genes}, Samples: ${saved.samples}`)
+      console.log(`   - Upregulated: ${saved.upregulatedGenes || 0}, Downregulated: ${saved.downregulatedGenes || 0}`)
+      
+      // Add chart-ready data to saved result
+      const savedWithCharts = {
+        ...saved,
+        chartData: analysisResult.chartData,
+        savedToDatabase: true, // Explicitly mark as saved
       }
-    } else {
-      // Database was unavailable from the start - return analysis without saving
+      
+      // Successfully saved - return with database ID and chart data
       return NextResponse.json({ 
         alreadyAnalyzed: false, 
-        data: analysisResult,
+        data: savedWithCharts,
+        savedToDatabase: true,
+      })
+    } catch (dbError: any) {
+      // Log full Prisma error details for debugging
+      console.error("❌ Database save error:", {
+        message: dbError.message,
+        code: dbError.code,
+        meta: dbError.meta,
+        stack: dbError.stack
+      })
+      
+      // Handle unique constraint violations (duplicate fileHash - race condition)
+      if (dbError.code === "P2002") {
+        try {
+          // Race condition: file was analyzed between check and save
+          const existingRun = await prisma.geneExpressionRun.findUnique({
+            where: { fileHash },
+          })
+          if (existingRun) {
+            console.log(`✅ Found existing analysis (race condition): ${existingRun.id}`)
+            // Add chart-ready data to existing result
+            const existingWithCharts = {
+              ...existingRun,
+              chartData: {
+                foldChangeData: existingRun.foldChangeData ? JSON.parse(existingRun.foldChangeData) : [],
+                distributionData: [], // Will be calculated if needed
+                expressionValues: [],
+              },
+              savedToDatabase: true,
+            }
+            return NextResponse.json({ 
+              alreadyAnalyzed: true, 
+              data: existingWithCharts,
+              savedToDatabase: true,
+            })
+          }
+        } catch (retryError: any) {
+          console.error("❌ Error fetching existing run after race condition:", {
+            message: retryError.message,
+            code: retryError.code,
+            meta: retryError.meta
+          })
+          // Fall through to return analysis without DB save
+        }
+      }
+      
+      // Database save failed, but return analysis results anyway
+      // This ensures users can still see their analysis even if DB is down
+      console.warn("⚠️ Analysis completed but NOT saved to database. Results are temporary.")
+      return NextResponse.json({ 
+        alreadyAnalyzed: false, 
+        data: {
+          ...analysisResult,
+          savedToDatabase: false,
+        },
         savedToDatabase: false,
-        warning: "Database unavailable. Analysis completed but results are temporary.",
+        warning: "Analysis completed but could not be saved to database. Results are temporary.",
       })
     }
     
