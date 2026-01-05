@@ -15,9 +15,22 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const fileHash = crypto.createHash("sha256").update(buffer).digest("hex")
 
-    const existing = await prisma.geneExpressionRun.findUnique({
-      where: { fileHash },
-    })
+    // Check for existing analysis with proper error handling
+    let existing
+    try {
+      existing = await prisma.geneExpressionRun.findUnique({
+        where: { fileHash },
+      })
+    } catch (dbError: any) {
+      console.error("Database query error:", dbError)
+      return NextResponse.json(
+        { 
+          error: "Database connection failed. Please check your database configuration.",
+          details: process.env.NODE_ENV === "development" ? dbError.message : undefined
+        },
+        { status: 500 }
+      )
+    }
 
     if (existing) {
       return NextResponse.json({ alreadyAnalyzed: true, data: existing })
@@ -129,25 +142,50 @@ export async function POST(req: Request) {
     }
   }
 
-    const saved = await prisma.geneExpressionRun.create({
-      data: {
-        fileName: file.name,
-        fileHash,
-        genes,
-        samples,
-        meanExpr,
-        upregulatedGenes,
-        downregulatedGenes,
-        foldChangeData,
-      },
-    })
+    // Save analysis results with proper error handling
+    let saved
+    try {
+      saved = await prisma.geneExpressionRun.create({
+        data: {
+          fileName: file.name,
+          fileHash,
+          genes,
+          samples,
+          meanExpr,
+          upregulatedGenes,
+          downregulatedGenes,
+          foldChangeData,
+        },
+      })
+    } catch (dbError: any) {
+      console.error("Database save error:", dbError)
+      // Handle unique constraint violations (duplicate fileHash)
+      if (dbError.code === "P2002") {
+        // Race condition: file was analyzed between check and save
+        const existingRun = await prisma.geneExpressionRun.findUnique({
+          where: { fileHash },
+        })
+        if (existingRun) {
+          return NextResponse.json({ alreadyAnalyzed: true, data: existingRun })
+        }
+      }
+      return NextResponse.json(
+        { 
+          error: "Failed to save analysis results. Please try again.",
+          details: process.env.NODE_ENV === "development" ? dbError.message : undefined
+        },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ alreadyAnalyzed: false, data: saved })
     
   } catch (error: any) {
     console.error("Analysis API error:", error)
+    // Ensure we return clean JSON errors instead of crashing
     return NextResponse.json({ 
-      error: error.message || "An error occurred during analysis. Please check your file format." 
+      error: error.message || "An error occurred during analysis. Please check your file format.",
+      details: process.env.NODE_ENV === "development" ? error.stack : undefined
     }, { status: 500 })
   }
 }

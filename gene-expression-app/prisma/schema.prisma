@@ -1,6 +1,9 @@
+// Migrated from SQLite to PostgreSQL for Vercel serverless compatibility
+// SQLite is not supported in serverless environments (no file system access)
+// PostgreSQL is provided via Neon/Supabase and configured via DATABASE_URL env var
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
